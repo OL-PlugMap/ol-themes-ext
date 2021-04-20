@@ -17,8 +17,7 @@ module.exports = {
   plugins: [
     new CopyWebpackPlugin({
         patterns: [
-            { from: 'src/*.d.ts', to: '[name][ext]' },
-            { from: 'package.json', to: '[name][ext]' }
+            { from: 'src/*.d.ts', to: '[name][ext]' }
         ]
     })
 ]

@@ -203,11 +203,18 @@ export default class Themes {
     let core = this.core;
     let map = core.getMap();
     let groups = categories.map(category => {
+
+      let selectionKeys = category.selection.selection_key ? [ category.selection.selection_key ] : category.selection.selection_keys;
+
       console.log("Setting up category", category)
       // build out all the layers, none will be visible yet
       let layers = category.layers.map(layer => {
         console.log("Making layer", layer)
-        return self.makeLayer.call(self, layer);
+        let lyr = self.makeLayer.call(self, layer);
+        if(selectionKeys.includes(layer.key))
+          lyr.setVisible(true);
+
+        return lyr;
       });
 
       // show layers that are part of current selection
@@ -225,7 +232,7 @@ export default class Themes {
         }
       group.set('id', category.category_key);
       group.set('selection_type', category.selection.selection_type)
-      group.set('selection_keys', category.selection.selection_key ? [ category.selection.selection_key ] : category.selection.selection_keys)
+      group.set('selection_keys', selectionKeys)
       group.selectLayer = this.selectLayer(group)
       group.deselectLayer = this.deselectLayer(group)
       return group;
@@ -408,6 +415,7 @@ export default class Themes {
   makeLayer(data) {
     // finalizes layer as either a layer group if it has multiple
     // endpoints or as a single layer if it only has one endpoint
+    console.log("Make Layer", data);
     let groupLayers = function (layers) {
       if (layers.length > 1) {
         let group = new LayerGroup({ layers: layers });

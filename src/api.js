@@ -75,3 +75,7 @@ export default class ol_themes_ext {
 
     
 }
+
+export function extendWithThemes(map) {
+    return new ol_themes_ext(map);
+}

@@ -8,7 +8,11 @@ This currently only supports ol 6.3. This package adds support to configure map 
 
 ---
 
+### Live Sample
+https://codesandbox.io/s/ol-themes-ext-v003-example-gvgr2
+
 ### Sample Usage
+
 
 ```javascript
 import Map from 'ol/Map'

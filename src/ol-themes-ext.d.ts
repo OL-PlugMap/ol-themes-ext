@@ -14,3 +14,5 @@ export class ol_themes_ext {
 
 
   export default ol_themes_ext;
+
+  export function extendWithThemes(map:any) : any;

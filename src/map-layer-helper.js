@@ -859,6 +859,36 @@ export default class Themes {
               url: url
             });
 
+            console.log("Endpoint headers", endpoint.headers);
+            if(endpoint.headers)
+            {
+              debugger;
+              var loader = function(tile, url) {
+                tile.setLoader(function(extent, resolution, projection) {
+                  var fetchModel =
+                    {
+                      method: 'GET',
+                      mode: 'cors',
+                      cache: 'no-cache',
+                      headers: endpoint.headers
+                    };
+                    
+                  fetch(url, fetchModel).then(function(response) {
+                    response.arrayBuffer().then(function(data) {
+                      const format = tile.getFormat()
+                      const features = format.readFeatures(data, {
+                        extent: extent,
+                        featureProjection: projection
+                      });
+                      tile.setFeatures(features);
+                    });
+                  });
+                });
+              }
+
+              source.setTileLoadFunction(loader);
+            }
+
             // source.on("tileloadend", evt => {
             //   var f = evt.tile.getFeatures();
             //   f.forEach(filterEngine);

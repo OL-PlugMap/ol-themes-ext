@@ -7,6 +7,12 @@ This package extends openlayers map objects to allow for a configuration driven 
 This currently only supports ol 6.3. This package adds support to configure map layers into "themes" via json.
 
 ---
+## Changelog
+- 0.0.5
+  - Cleaned up code a bit
+  - Removed excessive logging
+  - Fixed a bug in the selection code
+---
 
 ### Live Sample
 https://codesandbox.io/s/ol-themes-ext-v003-example-gvgr2

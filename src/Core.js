@@ -7,8 +7,6 @@ export default class Core {
     
     this.map = ele;
 
-    console.log("Map Ext Core", ele);
-
     this._plugins = [];
     this.subs = [];
     this.triggers = {};
@@ -35,8 +33,7 @@ export default class Core {
       {
         if(this.subs[event.data.cmd])
           this.subs[event.data.cmd](event.data.data);
-        else
-          console.log("Couldnt handle map event " + event.data.cmd)
+        
       }
     }
   }
@@ -67,14 +64,6 @@ export default class Core {
 
     window.addEventListener("message", this.receiveMessage.bind(this), false);
     window.mapMsg = this.receiveMessage
-
-
-    this.mapCmd("setServicesCmd", this.setServices.bind(this));
-    this.mapCmd("fitToWktCmd", this.fitToWkt.bind(this));
-    this.mapCmd("extentToPointZoomCmd", this.fitToPointZoom.bind(this));
-    this.mapCmd("refreshMap", this.refresh.bind(this));
-
-
     
 
     var map = this.getMap();
@@ -103,7 +92,7 @@ export default class Core {
             }
 
           
-          this.emit("extentUpdated", res);
+          //this.emit("extentUpdated", res);
         }
       )
     }
@@ -111,7 +100,7 @@ export default class Core {
 
     var that = this;
     setTimeout(() => {
-      that.emit("mapReady");
+      //that.emit("mapReady");
     }, 700 );
   }
 
@@ -230,13 +219,7 @@ export default class Core {
 
   // Stuff related to changing layers and extends plugins can hook to this and run these functions
   _changeLayer(layer) {
-    //console.log("Layer is changed to layer", layer, this);
   }
-
-  // _showLayerByName(layerName, opacity) {
-  //   showLayerByName.call(this.data.map, layerName, opacity);
-  // }
-
   zoomToExtent(extent) {
     this.data.map.getView().fit(extent, {
       size: this.data.map.getSize(),
@@ -259,84 +242,7 @@ export default class Core {
   processTrigger(name, value) {
     if (this.triggers[name]) for (let fn of this.triggers[name]) fn(value);
   }
-
-  mapCmd(name, f) {
-    let fn = val => {
-      let requestAnimationFrame =
-        window.requestAnimationFrame ||
-        window.mozRequestAnimationFrame ||
-        window.webkitRequestAnimationFrame ||
-        window.msRequestAnimationFrame;
-      requestAnimationFrame(() => {
-        try {
-          f(val);
-          this.processTrigger(name, val);
-        } catch (ex) {
-          //TODO: Rollbar
-          console.error(
-            "Handler for " + name + " encountered an unhandled exception"
-          );
-          console.error(ex);
-        }
-      });
-    };
-    this.subs[name] = fn;
-    if (this.elm) {
-      if (this.elm.ports[name]) {
-        this.elm.ports[name].subscribe(fn);
-      } else {
-        console.warn("Port " + name + " does not exist. Cannot bind");
-      }
-    } else {
-      console.error("No elm to bind to");
-    }
-  }
-
-  pumpCmd(name, val) {
-    if(this.subs[name])
-    {
-      this.subs[name](val);
-    }
-  }
-
-  unmapCmd(name) {
-    if (this.subs[name]) {
-      let fn = this.subs[name];
-      if (this.elm) {
-        if (this.elm.ports[name]) {
-          this.elm.ports[name].unsubscribe(fn);
-        }
-      }
-      this.subs[name] = null;
-      delete this.subs[name];
-    }
-  }
-
-  unmapCmds(names) {
-    for (let name of names) {
-      this.unmapCmd(name);
-    }
-  }
-
-  emit(name, value) {
-    if (!value) value = null;
-    if (this.elm) {
-      if (this.elm.ports[name]) {
-        try {
-          this.elm.ports[name].send(value);
-        } catch (ex) {
-          console.error("Error sending data. Is it in the corrct format?");
-          console.error(ex);
-        }
-      } else if (!this.elm.suppressPortWarnings) {
-        console.warn(
-          "Unable to send value to a port named " + name + " as it didnt exist!"
-        );
-        //debugger;
-      }
-    }
-    window.postMessage({ cmd : "map:" + name, data : value, source : "map" }, window.location.origin );
-  }
+  
 
   getMap() {
     if (this.data) return this.data.map;

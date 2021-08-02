@@ -51,18 +51,14 @@ export function convertLayer(oldValue) {
 }
 
 export function convertConfig(config) {
-    console.log("Converting config", config);
-
     if(isConfig(config))
     {
         let convertedCategories = [];
         let groupMap = {};
         let layerMap = {};
 
-        console.log("Converting layers")
         for(var layer of config.layers)
         {
-            console.log("Taking a peep at", layer.key)
             layer = convertLayer(layer);
             
             if(layer)
@@ -73,7 +69,6 @@ export function convertConfig(config) {
                 console.log("Failed to convert layer! Not adding to map")
         }
 
-        console.log("Converting groups")
         for(var group of config.layerGroups)
         {
             let newGroup =
@@ -95,13 +90,10 @@ export function convertConfig(config) {
             groupMap[group.key] = newGroup;
         }
 
-        console.log("Converting categories")
-
         let categories = [];
 
         for(var category of config.layerCategories)
         {
-            console.log("Taking a peep at", category.key);
             let newCat = {
                 category_key: category.key,
                 name: category.name,
@@ -117,11 +109,8 @@ export function convertConfig(config) {
                 }
             }
 
-            console.log("Translating Groups", category.layerGroups);
             for(let grpKey of category.layerGroups)
             {
-                console.log("Taking a peep at", grpKey);
-
                 if(groupMap[grpKey])
                 {
                     newCat.groups.push(groupMap[grpKey]);

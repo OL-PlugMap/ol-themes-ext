@@ -14,6 +14,9 @@ module.exports = {
       type: 'umd'
     }
   },
+  optimization: {
+    minimize: false
+  },
   plugins: [
     new CopyWebpackPlugin({
         patterns: [

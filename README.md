@@ -8,6 +8,9 @@ This currently only supports ol 6.3. This package adds support to configure map 
 
 ---
 ## Changelog
+- 0.0.6
+    - Added getFeaturesInView to mvt layers
+    - Added async getFeaturesUnderPixel to mvt layers
 - 0.0.5
   - Cleaned up code a bit
   - Removed excessive logging
@@ -188,5 +191,14 @@ let basemaps = categories[0];
 
 //Select the light grey layer
 basemaps.selectLayer("lyr_esri_light_gray");
+
+
+//For a MVT layer you can run this to get all the features currently rendered
+let featuresInView = my_mvt_layer.getFeaturesInView();
+
+//For a MVT layer you can tie to a click event to get the features clicked on
+map.on('click', async function (evt) {
+    let featuresClickedOn = await my_mvt_layer.getFeaturesUnderPixel(evt.pixel);
+});
 
 ```

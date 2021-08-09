@@ -399,7 +399,7 @@ export default class Themes {
 
       switch (data.config.type) {
         case "mvt":
-          layers = mvt.generate(data);
+          layers = mvt.generate(data, core);
           return groupLayers(layers);
         case "xyz":
           layers = data.config.value.endpoints.map(endpoint => {

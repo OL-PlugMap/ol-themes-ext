@@ -544,10 +544,10 @@ let _deduplicateFeatures = (features) => {
   return ret;
 };
 
-let _getFeaturesInView = (source, map) => {
+let _getFeaturesInView = (vtLayer, map) => {
   return async () => {
     return getLoadingPromise(vtLayer).then(async () => {
-      let features = source.getFeaturesInExtent(map.getView().calculateExtent());
+      let features = vtLayer.getSource().getFeaturesInExtent(map.getView().calculateExtent());
       
       let ret = _deduplicateFeatures(features);
 
@@ -566,6 +566,11 @@ let getLoadingPromise = (vtLayer) => {
   if(!vtLayer.loadPromiseResolves)
     vtLayer.loadPromiseResolves = [];
   vtLayer.loadPromiseResolves.push(resolve_);
+
+  if(!isLoadingTiles(vtLayer.getSource()))
+  {
+    resolve_("Not Loading");
+  }
 
   return promise;
 }
@@ -594,7 +599,7 @@ let _configureSource = (tokenKey) => {
 //When they exist and load has finished then resolve them
 
 let isLoadingTiles = (source) => {
-  return source.sourceTileCache.getValues().filter(tile => { return tile.status__ == "loading" });
+  return source.sourceTileCache.getValues().filter(tile => { return tile.status__ == "loading" }).length > 0;
 }
 
 let handlePostRender = (source, vtLayer) => {
@@ -686,7 +691,7 @@ export function generate(data, core) {
 
         vtLayer.filterEngine = _filterEngine(source);
 
-        vtLayer.getFeaturesInView = _getFeaturesInView(source, core.getMap())
+        vtLayer.getFeaturesInView = _getFeaturesInView(vtLayer, core.getMap())
 
         vtLayer.getFeaturesUnderPixel = _getFeaturesUnderPixel(vtLayer);
       

@@ -8,6 +8,10 @@ This currently only supports ol 6.3. This package adds support to configure map 
 
 ---
 ## Changelog
+- 0.0.7
+    - Added getCategoryByKey and getCategories to the map object
+    - added getLayerByKey to the category object
+    - added metadata to the layer object 
 - 0.0.6
     - Added getFeaturesInView to mvt layers
     - Added async getFeaturesUnderPixel to mvt layers
@@ -183,7 +187,7 @@ map = new Themes(map);
 //Pass in the config and get an array of categories back
 let categories = map.themes.initCategories(config);
 
-let basemaps = categories[0];
+let basemaps = map.getCategoryByKey("cat_basemaps");
 
 //Map will add the 4 above layers in a layer group, the returned value is an array of the categories from the config
 
@@ -200,5 +204,6 @@ let featuresInView = my_mvt_layer.getFeaturesInView();
 map.on('click', async function (evt) {
     let featuresClickedOn = await my_mvt_layer.getFeaturesUnderPixel(evt.pixel);
 });
+
 
 ```

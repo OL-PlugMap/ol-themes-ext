@@ -218,10 +218,31 @@ export default class Themes {
       group.set('selection_keys', selectionKeys)
       group.selectLayer = this.selectLayer(group)
       group.deselectLayer = this.deselectLayer(group)
+      group.getLayerByKey = this.getLayerByKey(group);
       return group;
     });
     groups.forEach(group => map.addLayer(group));
     return groups;
+  }
+
+  getLayerByKey(category) {
+    return (key) => {
+      let matchingLayers = category.getLayersArray().filter(layer => {
+        return layer.metadata.key === key;
+      });
+      if(matchingLayers)
+        return matchingLayers[0];
+    }
+  }
+
+  getVisibleLayers(category) {
+    return () => {
+      let matchingLayers = category.getLayersArray().filter(layer => {
+        return layer.getVisible();
+      });
+
+      return matchingLayers;
+    }
   }
 
   selectLayer(category) {
@@ -382,10 +403,18 @@ export default class Themes {
         let group = new LayerGroup({ layers: layers });
         group.set('id', data.key);
         window.layerMap[data.key] = group;
+        group.metadata = 
+          { key : data.key,
+            name: data.name
+          }
         return group;
       } else if (layers.length === 1) {
         layers[0].set('id', data.key);
         window.layerMap[data.key] = layers[0];
+        layers[0].metadata = 
+          { key : data.key,
+            name: data.name
+          }
         return layers[0];
       } else {
         throw new Error(`Could not make layer for ${data.key}`);

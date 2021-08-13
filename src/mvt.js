@@ -484,7 +484,7 @@ let _highlight = (source) => {
   source.highlightFeats = {};
   return (feature) => {
     source.highlightFeats[feature] = true;
-    this.changed();
+    source.changed();
   };
 };
 
@@ -506,8 +506,9 @@ let _loader = (endpoint) => {
           cache: 'no-cache',
           headers: endpoint.headers
         };
-        
+      tile.status__ = "loading";
       fetch(url, fetchModel).then(function(response) {
+        tile.status__ = "loaded";
         response.arrayBuffer().then(function(data) {
           const format = tile.getFormat()
           const features = format.readFeatures(data, {
@@ -516,6 +517,9 @@ let _loader = (endpoint) => {
           });
           tile.setFeatures(features);
         });
+      })
+      .catch(err => {
+        tile.status__ = "error";
       });
     });
   }
@@ -541,22 +545,40 @@ let _deduplicateFeatures = (features) => {
 };
 
 let _getFeaturesInView = (source, map) => {
-  return () => {
-    let features = source.getFeaturesInExtent(map.getView().calculateExtent());
-    
-    let ret = _deduplicateFeatures(features);
+  return async () => {
+    return getLoadingPromise(vtLayer).then(async () => {
+      let features = source.getFeaturesInExtent(map.getView().calculateExtent());
+      
+      let ret = _deduplicateFeatures(features);
 
-    return ret;
+      return ret;
+    });
   }
 };
 
+
+let getLoadingPromise = (vtLayer) => {
+  let resolve_, reject_ = null;
+  let promise = new Promise((resolve,reject) => {
+    resolve_ = resolve; reject_ = reject;
+  });
+
+  if(!vtLayer.loadPromiseResolves)
+    vtLayer.loadPromiseResolves = [];
+  vtLayer.loadPromiseResolves.push(resolve_);
+
+  return promise;
+}
+
 let _getFeaturesUnderPixel = (vtLayer) => {
   return async (pixel) => {
-    let features = await vtLayer.getFeatures(pixel);
-    
-    let ret = _deduplicateFeatures(features);
+    return getLoadingPromise(vtLayer).then(async () => {
+      let features = await vtLayer.getFeatures(pixel);
+      
+      let ret = _deduplicateFeatures(features);
 
-    return ret;
+      return ret;
+    });
   }
 };
 
@@ -566,6 +588,43 @@ let _configureSource = (tokenKey) => {
     source.setUrl(`${tokenData.baseUrl || ""}${endpoint.url}`);
   }
 };
+
+//TODO: Make a function that, if tiles are loaded installs a promise
+//Change the below to check if the promise(s) exist
+//When they exist and load has finished then resolve them
+
+let isLoadingTiles = (source) => {
+  return source.sourceTileCache.getValues().filter(tile => { return tile.status__ == "loading" });
+}
+
+let handlePostRender = (source, vtLayer) => {
+  
+  vtLayer.loadPromise = new Promise((resolve,reject) => {
+    vtLayer.loadPromiseResolve = resolve;
+    vtLayer.loadPromiseReject = reject;
+  });
+
+  return (evt) => {
+    let loadingTiles = source.sourceTileCache.getValues().filter(tile => { return tile.status__ == "loading" });
+    let loadingTilesCount = loadingTiles.length;
+
+    if(loadingTilesCount > 0)
+    {
+      //Still loading
+    }
+    else
+    {
+      //Loaded! Fire the loaded promise 
+      if(vtLayer.loadPromiseResolves)
+      {
+        vtLayer.loadPromiseResolves.forEach(resolve => {
+          resolve("Looded")
+        });
+        vtLayer.loadPromiseResolves = null;
+      }
+    }
+  }
+}
 
 export function generate(data, core) {
     var layers = data.config.value.endpoints.map(endpoint => {
@@ -631,6 +690,9 @@ export function generate(data, core) {
 
         vtLayer.getFeaturesUnderPixel = _getFeaturesUnderPixel(vtLayer);
       
+        vtLayer.on('postrender', handlePostRender(source, vtLayer));
+        source.on('tileloadend', handlePostRender(source, vtLayer));
+        source.on('tileloaderror', handlePostRender(source, vtLayer));
 
         return vtLayer;
       });

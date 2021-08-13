@@ -12,7 +12,6 @@ export default class ol_themes_ext {
 
         this.core.init({},{ ports: {} });
 
-
         map.themes = this;
         
         return map;
@@ -45,17 +44,35 @@ export default class ol_themes_ext {
 
     
 
-    initCategories(categories) {
-        if(isConfig(categories))
+    initCategories(config, withConfig) {
+        if(isConfig(config))
         {
-            categories = convertConfig(categories);
+            config = convertConfig(config);
         }
 
         this.initThemes()
 
-        var olCategories = this.themes.addLayerCategories(categories);
+        var olCategories = this.themes.addLayerCategories(config);
 
-        return olCategories;
+        this.categories = olCategories;
+
+        if(!withConfig)
+            return olCategories;
+        else
+            return { categories: olCategories, config: config };
+    }
+
+    getCategoryByKey(key) {
+        let matching = this.categories.filter(cat => {
+            return cat.metadata.key === key;
+        });
+
+        if(matching)
+            return matching[0];
+    }
+
+    getCategories() {
+        return this.categories;
     }
 
     

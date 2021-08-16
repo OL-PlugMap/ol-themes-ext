@@ -5,11 +5,17 @@ import VectorTileLayer from 'ol/layer/VectorTile';
 import VectorTileSource from 'ol/source/VectorTile';
 import MVT from 'ol/format/MVT';
 import { Fill, Stroke, Style } from 'ol/style';
+import {asString as ol_color_asString} from 'ol/color'
+//import ol_ext_inherits from '../util/ext'
+import {DEVICE_PIXEL_RATIO as ol_has_DEVICE_PIXEL_RATIO} from 'ol/has'
+
+
+import FillPattern from 'ol-ext/style/FillPattern';
 
 
 let dynamicStyling = (endpoint, source) => {
   return function (feature) {
-    if (source.highlightFeats[feature.properties_.id]) {
+    if (source.highlightFeats[feature.getId()]) {
       return new Style({
         fill: new Fill({
           color: "rgba(255,255,0,1)"
@@ -59,7 +65,7 @@ let dynamicStyling = (endpoint, source) => {
       if (map[val]) {
         var style = map[val];
         return new Style({
-          fill: new Fill({
+          fill: style.pattern ? pattern(style) : new Fill({
             color: style.fillColor || "rgba(255,0,0,0.5)"
           }),
           stroke: new Stroke({
@@ -295,6 +301,15 @@ let _filterEngine = (source) => {
   };
 }
 
+let pattern = (style) => {
+  debugger;
+  let opts = style.pattern;
+  opts.color = style.strokeColor
+  opts.fill = new Fill( { color: style.fillColor } );
+  return new FillPattern(opts);
+
+};
+
 
 let _styleFunction = (endpoint, source, layer) => {
 
@@ -473,17 +488,40 @@ let _clearFilters = (source) => {
   };
 };
 
+
+let getId = (feature) => {
+  let featureId = -1;
+    if(isNaN(feature))
+    {
+      if(feature.properties_)
+      {
+        featureId = feature.get("iso_a3"); //TODO
+      }
+      else
+      {
+        console.log("Halp");
+      }
+    }
+    else
+    {
+      featureId = feature;
+    }
+  return featureId;
+}
+
 let _unhighlight = (source) => {
   return (feature) => {
-    delete source.highlightFeats[feature];
-    this.changed();
+    delete source.highlightFeats[getId(feature)];
+    source.changed();
   };
 };
 
 let _highlight = (source) => {
   source.highlightFeats = {};
   return (feature) => {
-    source.highlightFeats[feature] = true;
+    console.log("Highlighting", feature);
+    
+    source.highlightFeats[getId(feature)] = true;
     source.changed();
   };
 };
@@ -567,10 +605,13 @@ let getLoadingPromise = (vtLayer) => {
     vtLayer.loadPromiseResolves = [];
   vtLayer.loadPromiseResolves.push(resolve_);
 
-  if(!isLoadingTiles(vtLayer.getSource()))
-  {
-    resolve_("Not Loading");
-  }
+  setTimeout(() => {
+    if(!isLoadingTiles(vtLayer.getSource()))
+    {
+      resolve_("Not Loading");
+    }
+  }, 500);
+
 
   return promise;
 }
@@ -599,7 +640,9 @@ let _configureSource = (tokenKey) => {
 //When they exist and load has finished then resolve them
 
 let isLoadingTiles = (source) => {
-  return source.sourceTileCache.getValues().filter(tile => { return tile.status__ == "loading" }).length > 0;
+  let numLoading = source.sourceTileCache.getValues().filter(tile => { return tile.status__ == "loading" }).length;
+  console.log("Loading", numLoading);
+  return numLoading > 0;
 }
 
 let handlePostRender = (source, vtLayer) => {

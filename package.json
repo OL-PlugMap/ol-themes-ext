@@ -23,7 +23,9 @@
     "url": "https://github.com/OL-PlugMap/ol-themes-ext/issues"
   },
   "homepage": "https://github.com/OL-PlugMap/ol-themes-ext#readme",
-  "dependencies": {},
+  "dependencies": {
+    "ol-ext": "^3.2.4"
+  },
   "devDependencies": {
     "@turf/area": "^6.3.0",
     "@turf/boolean-within": "^6.3.0",

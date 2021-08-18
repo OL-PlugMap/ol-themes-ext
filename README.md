@@ -8,11 +8,13 @@ This currently only supports ol 6.3. This package adds support to configure map 
 
 ---
 ## Changelog
-- 0.0.9
+- 0.0.10
     - Added support for static vector layers so you can use the same styling function for dynamic data
     - Removed some logs
-- 0.0.8
+- 0.0.9
     - Added support for a pattern fill
+- 0.0.8
+    - Bugfix for tile loading functions
 - 0.0.7
     - Added getCategoryByKey and getCategories to the map object
     - added getLayerByKey to the category object

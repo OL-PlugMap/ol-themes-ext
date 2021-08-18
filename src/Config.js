@@ -24,6 +24,9 @@ export function convertLayer(oldValue) {
 
     if(oldValue.mvt)
         targetKey = "mvt";
+        
+    if(oldValue.staticVector)
+        targetKey = "staticVector";
 
     if(oldValue.wms)
         targetKey = "wms";
@@ -46,6 +49,7 @@ export function convertLayer(oldValue) {
         maxZoom: oldValue[targetKey].maxZoom,
         minZoom: oldValue[targetKey].minZoom,
     }
+
 
     return newValue;
 }

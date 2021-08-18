@@ -21,6 +21,9 @@ import { applyStyle } from 'ol-mapbox-style';
 import EsriJSON from 'ol/format/EsriJSON';
 
 import * as mvt from './mvt'
+import * as staticVector from './staticVector'
+
+import {getLogger} from './logger'
 
 const esrijsonFormat = new EsriJSON();
 
@@ -189,6 +192,7 @@ export default class Themes {
     let core = this.core;
     let map = core.getMap();
     let groups = categories.map(category => {
+      getLogger()("Processing", category);
 
       let selectionKeys = category.selection.selection_key ? [ category.selection.selection_key ] : category.selection.selection_keys;
 
@@ -311,7 +315,7 @@ export default class Themes {
       {
         case 'monoselective':
         case 'monoselection':
-          if(selectionKeys.includes(targetKey))
+          if( selectionKeys.includes(targetKey))
           {
               layerToSelect.setVisible(false);
               selectionKeys = selectionKeys.filter(a => a != targetKey);
@@ -396,6 +400,7 @@ export default class Themes {
   }
 
   makeLayer(data) {
+    getLogger()("Make layer", data);
     // finalizes layer as either a layer group if it has multiple
     // endpoints or as a single layer if it only has one endpoint
     let groupLayers = function (layers) {
@@ -425,10 +430,16 @@ export default class Themes {
       let self = this;
       let core = this.core;
       let layers = null;
+      let layerType = data.config.type.toLowerCase();
 
-      switch (data.config.type) {
+      getLogger()("Processing a layer with type", layerType);
+
+      switch (layerType) {
         case "mvt":
           layers = mvt.generate(data, core);
+          return groupLayers(layers);
+        case "staticvector":
+          layers = staticVector.generate(data, core);
           return groupLayers(layers);
         case "xyz":
           layers = data.config.value.endpoints.map(endpoint => {
@@ -587,8 +598,8 @@ export default class Themes {
 
           return groupLayers(laeyrs);
 
-        case "esriMapService":
-        case "esriExport":
+        case "esrimapservice":
+        case "esriexport":
           layers = data.config.value.endpoints.map(endpoint => {
             //The random adds a random value to the parameter
             //essentually cache busting  
@@ -765,8 +776,8 @@ export default class Themes {
 
           return groupLayers(layers);
         
-        case "esriFeatureService":
-        case "esriFeature":
+        case "esrifeatureservice":
+        case "esrifeature":
             layers = data.config.value.endpoints.map(endpoint => {
               //The random adds a random value to the parameter
               //essentually cache busting  

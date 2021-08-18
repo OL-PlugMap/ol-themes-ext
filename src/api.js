@@ -2,6 +2,7 @@ import Core from "./Core"
 import Themes from "./map-layer-helper";
 
 import { isConfig, convertConfig } from "./Config"
+import { getLogger } from "./logger";
 
 export default class ol_themes_ext {
     constructor(map) {
@@ -49,6 +50,8 @@ export default class ol_themes_ext {
         {
             config = convertConfig(config);
         }
+
+        getLogger("Setting up", config);
 
         this.initThemes()
 

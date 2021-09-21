@@ -83,6 +83,13 @@ export function convertConfig(config) {
                     layers: []
                 }
 
+            if(!group.layers)
+            {
+                //Bad hack but prevents crashing when no layers are in a group or the key is missing
+                console.warn("Provided layers in groups is not valid. Defaulting to an empty list.", group);
+                group.layers = [];
+            }
+
             for(var layerKey of group.layers)
             {
                 if(layerMap[layerKey])
@@ -111,6 +118,12 @@ export function convertConfig(config) {
                     selection_type: category.selectiveness,
                     selection_keys: category.defaultSelection
                 }
+            }
+
+            if(!category.layerGroups)
+            {
+                console.warn("Provided layer groups is not valid. Defaulting to an empty list.", category);
+                category.layerGroups = [];
             }
 
             for(let grpKey of category.layerGroups)

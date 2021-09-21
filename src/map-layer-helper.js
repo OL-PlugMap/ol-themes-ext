@@ -593,13 +593,11 @@ export default class Themes {
         case "esrimapservice":
         case "esriexport":
           layers = esriExport.generate(data,core);
-
           return groupLayers(layers);
         
         case "esrifeatureservice":
         case "esrifeature":
-            let layers = esriFeature.generate(data,core);
-  
+            layers = esriFeature.generate(data,core);
             return groupLayers(layers);
 
         default:
@@ -608,6 +606,7 @@ export default class Themes {
     }
     catch (err) {
       debugger;
+      console.error("Error processing layer", data);
       console.error(err);
     }
 

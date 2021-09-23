@@ -11,6 +11,7 @@ import { getWidth } from "ol/extent";
 import {tile as tileStrategy} from 'ol/loadingstrategy';
 import { getLogger } from "./logger";
 
+const esrijsonFormat = new EsriJSON();
 
 export const generate = (data, core) => {
     let layers = data.config.value.endpoints.map(endpoint => {
@@ -92,26 +93,53 @@ export const generate = (data, core) => {
       .then(resp => { return resp.json() } )
       .then(meta => {
         var rend = (meta && meta.drawingInfo ? meta.drawingInfo.renderer : {}) || {} ;
-        var field = rend.field1;
-        endpoint.styleCache.field = field;
-        endpoint.styleCache.map = {};
-        for(var inf of rend.uniqueValueInfos)
+        if(!rend)
         {
-          var sym = inf.symbol;
-          endpoint.styleCache.map[inf.value] =
-            new Style({
-              fill: new Fill({
-                color: `rgba(${sym.color[0]},${sym.color[1]},${sym.color[2]},${sym.color[3]/255})`
-              }),
-              stroke: new Stroke({
-                color: `rgba(${sym.outline.color[0]},${sym.outline.color[1]},${sym.outline.color[2]},${sym.outline.color[3]/255})`,
-                width: sym.outline.width || 4
-              })
-            })
+          getWarning()("The included service didnt have drawing info. This can happen if you dont pass in the layer with the url. For example: somedomain.com/somepath/FeatureServer/0/");
+          endpoint.styleCache = false;
+          return;
         }
+
+        let rendererType = rend.type;
+
+        switch(rendererType)
+        {
+          case "uniqueValue": {
+            getLogger()("Found a unique value renderer");
+            if(rend.field2)
+            {
+              getWarning()("This renderer has multiple fields. Currently only the first field is supported, the rest are ignored. Please open an issue on this library with the following values.", endpoint, rend);
+            }
+            var field = rend.field1;
+            endpoint.styleCache.field = field;
+            endpoint.styleCache.map = {};
+            for(var inf of rend.uniqueValueInfos)
+            {
+              var sym = inf.symbol;
+              endpoint.styleCache.map[inf.value] =
+                new Style({
+                  fill: new Fill({
+                    color: `rgba(${sym.color[0]},${sym.color[1]},${sym.color[2]},${sym.color[3]/255})`
+                  }),
+                  stroke: new Stroke({
+                    color: `rgba(${sym.outline.color[0]},${sym.outline.color[1]},${sym.outline.color[2]},${sym.outline.color[3]/255})`,
+                    width: sym.outline.width || 4
+                  })
+                })
+            }
+          }; break;
+
+          default: {
+            getWarning()("Unsupported renderer detected. Please open an issue on this library with the following value.", endpoint, rend)
+          }; break;
+
+        }
+
+        
       })
       .catch(a => {
-          console.warn("Unable to get style from provided URL", endpoint.url, a)
+          getWarning()("Unable to get style from provided URL", endpoint.url, a. endpoint)
+          endpoint.styleCache = false;
       });
 
     let source = new VectorSource({
@@ -144,7 +172,10 @@ export const generate = (data, core) => {
               }
             //}
           },
-        );
+        )
+        .catch((err) => {
+          getWarning()("Unhandled exception in esri feature loader", err)
+        })
       },
       strategy: tileStrategy(
         createXYZ({

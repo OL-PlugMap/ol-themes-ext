@@ -9,7 +9,9 @@ import EsriJSON from 'ol/format/EsriJSON';
 import { get } from "ol/proj";
 import { getWidth } from "ol/extent";
 import {tile as tileStrategy} from 'ol/loadingstrategy';
-import { getLogger } from "./logger";
+import { getLogger, getWarning } from "./logger";
+import { createStyleFunction, setMapProjection } from 'ol-esri-style';
+
 
 const esrijsonFormat = new EsriJSON();
 
@@ -92,48 +94,98 @@ export const generate = (data, core) => {
     window.fetch(endpoint.url + "?f=json")
       .then(resp => { return resp.json() } )
       .then(meta => {
-        var rend = (meta && meta.drawingInfo ? meta.drawingInfo.renderer : {}) || {} ;
-        if(!rend)
+        try
         {
-          getWarning()("The included service didnt have drawing info. This can happen if you dont pass in the layer with the url. For example: somedomain.com/somepath/FeatureServer/0/");
-          endpoint.styleCache = false;
-          return;
-        }
-
-        let rendererType = rend.type;
-
-        switch(rendererType)
-        {
-          case "uniqueValue": {
-            getLogger()("Found a unique value renderer");
-            if(rend.field2)
-            {
-              getWarning()("This renderer has multiple fields. Currently only the first field is supported, the rest are ignored. Please open an issue on this library with the following values.", endpoint, rend);
+          getLogger()("Style", meta);
+          setMapProjection(core.getMap().getView().getProjection());
+          createStyleFunction(meta).then(styleFunction => {
+            getLogger()("Debug stuff here");
+            endpoint.styleFunction = (feature, resolution) => {
+              getLogger()(feature);
+              return styleFunction(feature, resolution);
             }
-            var field = rend.field1;
-            endpoint.styleCache.field = field;
-            endpoint.styleCache.map = {};
-            for(var inf of rend.uniqueValueInfos)
-            {
-              var sym = inf.symbol;
-              endpoint.styleCache.map[inf.value] =
-                new Style({
-                  fill: new Fill({
-                    color: `rgba(${sym.color[0]},${sym.color[1]},${sym.color[2]},${sym.color[3]/255})`
-                  }),
-                  stroke: new Stroke({
-                    color: `rgba(${sym.outline.color[0]},${sym.outline.color[1]},${sym.outline.color[2]},${sym.outline.color[3]/255})`,
-                    width: sym.outline.width || 4
-                  })
+
+            getLogger()("Setting FN");
+            endpoint.layerRef.setStyle(endpoint.styleFunction);
+          })
+          .catch((err) => {
+            getLogger()("Catch", err);
+            endpoint.styleFunction = (feature) => {
+              return new Style({
+                fill: new Fill({
+                  color: "rgba(255,0,0,0.5)"
+                }),
+                stroke: new Stroke({
+                  color: "rgba(255,0,255,0.75)",
+                  width: 4
                 })
-            }
-          }; break;
+              })
+            };
 
-          default: {
-            getWarning()("Unsupported renderer detected. Please open an issue on this library with the following value.", endpoint, rend)
-          }; break;
-
+            getLogger()("Setting FN");
+            endpoint.layerRef.setStyle(endpoint.styleFunction);
+          })
         }
+        catch(ex)
+        {
+          getLogger()("Exception", ex);
+          endpoint.styleFunction = (feature) => {
+            return new Style({
+              fill: new Fill({
+                color: "rgba(255,0,0,0.5)"
+              }),
+              stroke: new Stroke({
+                color: "rgba(255,0,255,0.75)",
+                width: 4
+              })
+            })
+          };
+
+          getLogger()("Setting FN");
+          endpoint.layerRef.setStyle(endpoint.styleFunction);
+        }
+        // var rend = (meta && meta.drawingInfo ? meta.drawingInfo.renderer : {}) || {} ;
+        // if(!rend)
+        // {
+        //   getWarning()("The included service didnt have drawing info. This can happen if you dont pass in the layer with the url. For example: somedomain.com/somepath/FeatureServer/0/");
+        //   endpoint.styleCache = false;
+        //   return;
+        // }
+
+        // let rendererType = rend.type;
+
+        // switch(rendererType)
+        // {
+        //   case "uniqueValue": {
+        //     getLogger()("Found a unique value renderer");
+        //     if(rend.field2)
+        //     {
+        //       getWarning()("This renderer has multiple fields. Currently only the first field is supported, the rest are ignored. Please open an issue on this library with the following values.", endpoint, rend);
+        //     }
+        //     var field = rend.field1;
+        //     endpoint.styleCache.field = field;
+        //     endpoint.styleCache.map = {};
+        //     for(var inf of rend.uniqueValueInfos)
+        //     {
+        //       var sym = inf.symbol;
+        //       endpoint.styleCache.map[inf.value] =
+        //         new Style({
+        //           fill: new Fill({
+        //             color: `rgba(${sym.color[0]},${sym.color[1]},${sym.color[2]},${sym.color[3]/255})`
+        //           }),
+        //           stroke: new Stroke({
+        //             color: `rgba(${sym.outline.color[0]},${sym.outline.color[1]},${sym.outline.color[2]},${sym.outline.color[3]/255})`,
+        //             width: sym.outline.width || 4
+        //           })
+        //         })
+        //     }
+        //   }; break;
+
+        //   default: {
+        //     getWarning()("Unsupported renderer detected. Please open an issue on this library with the following value.", endpoint, rend)
+        //   }; break;
+
+        // }
 
         
       })
@@ -141,6 +193,8 @@ export const generate = (data, core) => {
           getWarning()("Unable to get style from provided URL", endpoint.url, a. endpoint)
           endpoint.styleCache = false;
       });
+
+    
 
     let source = new VectorSource({
       loader: function (extent, resolution, projection) {
@@ -304,6 +358,7 @@ export const generate = (data, core) => {
     //   source.params_ = customParams;
     // }
     lyr.setVisible(false);
+    endpoint.layerRef = lyr;
     return lyr;
   });
 

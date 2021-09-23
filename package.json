@@ -24,6 +24,7 @@
   },
   "homepage": "https://github.com/OL-PlugMap/ol-themes-ext#readme",
   "dependencies": {
+    "ol-esri-style": "^2.0.9",
     "ol-ext": "^3.2.4"
   },
   "devDependencies": {

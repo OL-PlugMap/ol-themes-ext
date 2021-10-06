@@ -162,12 +162,12 @@ export default class Themes {
       return self.makeLayer.call(self, layer);
     });
 
-    
+
     layersMapped.map(layer => {
-      
+
       return layer;
     });
-    
+
     return layersMapped;
   }
 
@@ -182,7 +182,13 @@ export default class Themes {
     let groups = categories.map(category => {
       getLogger()("Processing", category);
 
-      let selectionKeys = category.selection.selection_key ? [ category.selection.selection_key ] : category.selection.selection_keys;
+      const select = category.selection;
+      // Special handling in the event a mono selection type's selection_key was saved into selection_keys array.
+      const isMono = select.selection_type === 'monoselection' || select.selection_type === 'monoselective';
+      if (isMono && !select.selection_key && Array.isArray(select.selection_keys)) {
+        select.selection_key = select.selection_keys[select.selection_keys.length - 1];
+      }
+      let selectionKeys = select.selection_key ? [ select.selection_key ] : select.selection_keys;
 
       let layers = [];
       if(category.layers)
@@ -198,19 +204,19 @@ export default class Themes {
 
       // show layers that are part of current selection
       // and hide ones that are not part of current selection
-      self.setLayerVisibilities(category.selection, layers);
+      self.setLayerVisibilities(select, layers);
 
       // group category layers into a layer group
       let group = new LayerGroup({
         opacity: category.opacity,
         layers: layers
       });
-      group.metadata = 
+      group.metadata =
         { key : category.category_key,
           name: category.category_name
         }
       group.set('id', category.category_key);
-      group.set('selection_type', category.selection.selection_type)
+      group.set('selection_type', select.selection_type)
       group.set('selection_keys', selectionKeys)
       group.selectLayer = this.selectLayer(group)
       group.deselectLayer = this.deselectLayer(group)
@@ -248,12 +254,12 @@ export default class Themes {
         var lyrs = category.getLayersArray();
 
         var filt = lyrs.filter(a => a.get('id') == layerToSelect)
-        
+
         if(filt && filt.length)
           layerToSelect = filt[0];
         else
           console.log("Couldnt find layer by id", layerToSelect);
-      }  
+      }
       let categoryId = category.get('id');
       let selectionType = category.get('selection_type');
       let selectionKeys = category.get('selection_keys');
@@ -283,7 +289,7 @@ export default class Themes {
         default: console.log("Unknown selection type", selectionType, "looking for one of [monoselection,monoselective,polyselection,polyselective]");
       }
 
-      
+
       category.set('selection_keys', selectionKeys);
     }
   }
@@ -297,7 +303,7 @@ export default class Themes {
           layerToSelect = filt[0];
         else
           console.log("Couldnt find layer by id", layerToSelect);
-      }  
+      }
       let categoryId = category.get('id');
       let selectionType = category.get('selection_type');
       let selectionKeys = category.get('selection_keys');
@@ -325,7 +331,7 @@ export default class Themes {
         default: console.log("Unknown selection type");
       }
 
-      
+
       category.set('selection_keys', selectionKeys);
     }
   }
@@ -400,7 +406,7 @@ export default class Themes {
         let group = new LayerGroup({ layers: layers });
         group.set('id', data.key);
         window.layerMap[data.key] = group;
-        group.metadata = 
+        group.metadata =
           { key : data.key,
             name: data.name
           }
@@ -408,7 +414,7 @@ export default class Themes {
       } else if (layers.length === 1) {
         layers[0].set('id', data.key);
         window.layerMap[data.key] = layers[0];
-        layers[0].metadata = 
+        layers[0].metadata =
           { key : data.key,
             name: data.name
           }
@@ -537,7 +543,7 @@ export default class Themes {
 
           layers = data.config.value.endpoints.map(endpoint => {
             //The random adds a random value to the parameter
-            //essentually cache busting  
+            //essentially cache busting
             let customParams = {
               get random() {
                 return Math.random();
@@ -594,7 +600,7 @@ export default class Themes {
         case "esriexport":
           layers = esriExport.generate(data,core);
           return groupLayers(layers);
-        
+
         case "esrifeatureservice":
         case "esrifeature":
             layers = esriFeature.generate(data,core);

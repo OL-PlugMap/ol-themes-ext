@@ -8,6 +8,14 @@ This currently only supports ol 6.3. This package adds support to configure map 
 
 ---
 ## Changelog
+- 0.0.15
+    - Added initial support for filtering on MVT layers
+- 0.0.14
+    - Fixed an issue with monoselection keys
+- 0.0.13
+    - Added some support for the esri feature service renderers via 0l-esri-style
+- 0.0.12 (And 11 lol)
+    - Fixed an issue with clicking on multiple features from a MVT layer. The default ol function only returned the topmost feature.
 - 0.0.10
     - Added support for static vector layers so you can use the same styling function for dynamic data
     - Removed some logs

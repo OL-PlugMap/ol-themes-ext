@@ -5,11 +5,12 @@ import MVT from 'ol/format/MVT';
 import { _styleFunction } from './vectorStyles'
 import { getLogger } from './logger';
 
-
+import { _buildEngine } from './filterEngine'
 
 
 let _filterEngine = (source) => {
   (feature) => {
+    getLogger()("Filter Engine Old");
     var renderFeature = true;
     var fev =
     {
@@ -24,6 +25,7 @@ let _filterEngine = (source) => {
       renderFeature = true;
       var keys = Object.keys(source.filter);
       keys.forEach(key => {
+        getLogger()("Applying", key, source.filter[key]);
         var filterResult =
         {
           checked: true
@@ -573,6 +575,8 @@ export const generate = (data, core) => {
         vtLayer.unhighlight = _unhighlight(source);
 
         vtLayer.applyFilters = _applyFilters(source, vtLayer);
+
+        vtLayer.filter = _buildEngine(source,vtLayer);
           
         vtLayer.clearFilters = _clearFilters(source);
 

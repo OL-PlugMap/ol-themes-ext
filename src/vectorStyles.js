@@ -1,8 +1,9 @@
 import FillPattern from 'ol-ext/style/FillPattern';
 import { Style, Fill, Stroke } from 'ol/style';
+import { _checkFilter } from './filterEngine'
 
 
-import {getLogger} from './logger'
+import { getLogger } from './logger'
 
 export const pattern = (style) => {
     let opts = style.pattern;
@@ -35,6 +36,13 @@ export const dynamicStyling = (endpoint, source) => {
       if (fev && fev.renderFn) {
         fev.renderFn();
         r = fev.render;
+      }
+
+      if(source.filterSet?.mode && source.filterSet?.mode != "NONE" )
+      {
+        let isRenderable = _checkFilter(source, feature);
+        getLogger()(isRenderable);
+        r = isRenderable;
       }
   
       renderFeature = feature.get("selected") || r;

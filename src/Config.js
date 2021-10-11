@@ -117,7 +117,8 @@ export function convertConfig(config) {
                 selection: {
                     selection_type: category.selectiveness,
                     selection_keys: category.defaultSelection
-                }
+                },
+                opacity: !isNaN(category.opacity) ? category.opacity : !isNaN(category.transparency) ? category.transparency : 1
             }
 
             if(!category.layerGroups)

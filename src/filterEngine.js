@@ -8,7 +8,7 @@ import { getLogger } from './logger'
 export const _buildEngine = (source,vtLayer) => {
 
     if(!source.filterSet)
-        source.filterSet = { mode: "NONE", values: {} };
+        source.filterSet = { mode: "NONE", values: {}, layer: null };
   
     return {
       when: (field) => {
@@ -32,6 +32,18 @@ export const _buildEngine = (source,vtLayer) => {
             source.changed();
             return _buildEngine(source, vtLayer);
           },
+          containsAny: (values) => {
+            source.filterSet.values[field] = { containsAny: true, values: value };
+            getLogger()(source.filterSet);
+            source.changed();
+            return _buildEngine(source, vtLayer);
+          },
+          containsAll: (values) => {
+            source.filterSet.values[field] = { containsAll: true, values: value };
+            getLogger()(source.filterSet);
+            source.changed();
+            return _buildEngine(source, vtLayer);
+          },
           isExactly: (value) => {
             source.filterSet.values[field] = { exactly: true, values: value };
             getLogger()(source.filterSet);
@@ -42,6 +54,7 @@ export const _buildEngine = (source,vtLayer) => {
       },
       clear: () => {
         source.filterSet.values = {};
+        source.filterSet.mode = "NONE"
         source.changed();
         return _buildEngine(source, vtLayer);              
       },
@@ -56,6 +69,12 @@ export const _buildEngine = (source,vtLayer) => {
         getLogger()(source.filterSet);
         source.changed();
         return _buildEngine(source, vtLayer);
+      },
+      appliesTo: (layer) => {
+        source.filterSet.layer = layer;
+        getLogger()(source.filterSet);
+        source.changed();
+        return _buildEngine(source, vtLayer);  
       }
     }
   };
@@ -89,10 +108,23 @@ export const _checkFilter = (source, feature) => {
                 if(filter.any && filter.values.includes(valueToTest))
                     filterMatch = true;
                 else if(filter.all)
+                {
+                    filterMatch = true;
                     for(let value of filter.values)
                         filterMatch = filterMatch && valueToTest == value;
+                }
                 else if(filter.contains && (valueToTest+"").indexOf(filter.values) >= 0)
                     filterMatch = true;
+                else if(filter.containsAny)
+                    for(let value of filter.values)
+                        if ((valueToTest+"").indexOf(value) >= 0)
+                            filterMatch = true;
+                else if(filter.containsAll)
+                {
+                    filtermatch = true;
+                    for(let value of filter.values)
+                        filterMatch = filterMatch & ((valueToTest+"").indexOf(value) >= 0)
+                }                            
                 else if(filter.exactly && valueToTest == filter.values)
                     filterMatch = true;
                 

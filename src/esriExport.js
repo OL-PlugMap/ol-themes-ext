@@ -7,6 +7,8 @@ import {getLogger} from './logger'
 import { get } from "ol/proj";
 import { getWidth } from "ol/extent";
 
+import { _buildEngine } from './filterEngine'
+
 
 
 
@@ -50,9 +52,6 @@ export const generate = (data,core) => {
       crossOrigin: 'anonymous',
       ratio: 1,
       maxZoom: 26,
-      tileLoadFunction: (image, src) => {
-        image.getImage().src = src;
-      },
       tileGrid: tileGrid
       // tileGrid: new TileGrid(
       //     { tileSize:[2048,2048]
@@ -61,6 +60,72 @@ export const generate = (data,core) => {
       //       , extent: data.config.value.extent
       //     }
       //     )
+    });
+
+    source.setTileLoadFunction((image, src) => {
+      if(source.filterSet)
+      {
+        getLogger()("Filter set", source.filterSet);
+        if(source.filterSet.mode != "NONE")
+        {
+          let condStr = "";
+          let conds = [];
+
+
+          let keys = Object.keys(source.filterSet.values);
+
+          if(!keys.length)
+              value = true;
+
+          for(let field of keys)
+          {
+              
+              let filter = source.filterSet.values[field];
+
+              getLogger()("Checking", field, filter);
+
+              if(filter.any)
+                  conds.push(`${field} = ANY(${filter.values.map(a=>"'"+a+"'").join(",")})`);
+              else if(filter.all)
+              {
+                conds.push(`${field} = ALL(${filter.values.map(a=>"'"+a+"'").join(",")})`);
+              }
+              else if(filter.contains)
+                conds.push(`${field} LIKE '%${filter.values}%'`);
+              else if(filter.containsAny)
+                conds.push(filter.values.map(a => `${field} LIKE '%${a}%'`).join(" OR "));
+              else if(filter.containsAll)
+                conds.push(filter.values.map(a => `${field} LIKE '%${a}%'`).join(" AND "));                
+              else if(filter.exactly)
+                conds.push(`${field} = '${filter.values}'`);
+
+              getLogger()("Conds is now", conds)
+          }
+
+          conds = conds.map(a => `(${a})`);
+                        
+          if(source.filterSet.mode == "AND")
+              condStr = conds.join(" AND ");
+          if(source.filterSet.mode == "OR")
+            condStr = conds.join(" OR ");
+
+
+          if(source.filterSet.layer != null)
+            condStr = source.filterSet.layer + ":" + condStr;
+          else
+            condStr = "all:" + condStr; //TODO: I am unsure if this is even valid
+
+          getLogger()("Final where clause", condStr);
+
+          image.getImage().src = src + `&layerDefs=${encodeURIComponent(condStr)}`;
+          return;
+
+        }
+      }
+      else
+        getLogger()("No Filters", source);
+
+      image.getImage().src = src;
     });
 
 
@@ -76,6 +141,7 @@ export const generate = (data,core) => {
 
     source.applyFilters =
       function (ls) {
+        getLogger()("Applying filters to ", ls);
         if (!Array.isArray(ls) && ls.filts)
           ls = ls.filts;
         ls.forEach(layer => {
@@ -133,6 +199,16 @@ export const generate = (data,core) => {
           }
         })
       };
+
+    source.oldChanged = source.changed;
+    
+    //This is a hack because calling changed wont clear the tile cache automatically
+    source.changed = () => {
+      source.tileCache.clear();
+      source.oldChanged();
+    }
+
+    lyr.filter = _buildEngine(source, lyr);
 
     source.clearFilters =
       function (layer) {

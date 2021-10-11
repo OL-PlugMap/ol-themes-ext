@@ -38,7 +38,8 @@ export const dynamicStyling = (endpoint, source) => {
         r = fev.render;
       }
 
-      if(source.filterSet?.mode && source.filterSet?.mode != "NONE" )
+      //Apparently webpack didnt take too kindly to ?. so I rewrote this to play nicer with it for now ...
+      if(source.filterSet && source.filterSet.mode && source.filterSet.mode != "NONE" )
       {
         let isRenderable = _checkFilter(source, feature);
         getLogger()(isRenderable);

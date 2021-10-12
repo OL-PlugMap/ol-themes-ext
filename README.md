@@ -8,6 +8,8 @@ This currently only supports ol 6.3. This package adds support to configure map 
 
 ---
 ## Changelog
+- 0.0.19
+    - (*) Fixed a bug where Esri Feature Services wouldn't take the configured opacity
 - 0.0.17
     - Changed optional chaining property accessors to regular accessors for the time being as webpack was throwing a fit
 - 0.0.16
@@ -225,5 +227,19 @@ map.on('click', async function (evt) {
     let featuresClickedOn = await my_mvt_layer.getFeaturesUnderPixel(evt.pixel);
 });
 
+//Filtering
+// Suppose you have a category with a key of cat_test
+// In that category you have a layer with a key of lyr_test
+// The layer's features have a property named "County"
+// The property contains a string representation of the county in which the feature lies
+
+// One could filter the displayed features to a county named or containing "Iron" by doing the following
+window.map.themes.getCategoryByKey("cat_test").getLayerByKey("lyr_test").filter.when("County").contains("Iron");
+
+// If you wanted only "Iron" exactly
+window.map.themes.getCategoryByKey("cat_test").getLayerByKey("lyr_test").filter.when("County").exactly("Iron");
+
+// If you want to display any feature that was in Iron or Cache or any combination of the two
+window.map.themes.getCategoryByKey("cat_test").getLayerByKey("lyr_test").filter.when("County").containsAny([ "Iron", "Cache" ]);
 
 ```

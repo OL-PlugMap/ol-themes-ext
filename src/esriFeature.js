@@ -243,6 +243,7 @@ export const generate = (data, core) => {
     let lyr = new VectorLayer({
       source: source,
       zIndex: endpoint.zIndex || 0,
+      opacity: data.opacity || 1,
       style: endpoint.styleFunction
     });
     lyr.set('id', data.key);

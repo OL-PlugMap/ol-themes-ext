@@ -6,46 +6,6 @@ This package extends openlayers map objects to allow for a configuration driven 
 
 This currently only supports ol 6.3. This package adds support to configure map layers into "themes" via json.
 
----
-## Changelog
-- 0.0.20
-    - (*) Fixed a couple typos in the filter engine
-    - (+) Added a clear on the when clause of the filter engine so you can clear a single filtered field
-- 0.0.19
-    - (*) Fixed a bug where Esri Feature Services wouldn't take the configured opacity
-- 0.0.17
-    - Changed optional chaining property accessors to regular accessors for the time being as webpack was throwing a fit
-- 0.0.16
-    - (+) Added initial support for filtering esri map service (export) layers
-- 0.0.15
-    - (+) Added initial support for filtering on MVT layers
-- 0.0.14
-    - (*) Fixed an issue with monoselection keys
-- 0.0.13
-    - (+) Added some support for the esri feature service renderers via 0l-esri-style
-- 0.0.12 (And 11 lol)
-    - Fixed an issue with clicking on multiple features from a MVT layer. The default ol function only returned the topmost feature.
-- 0.0.10
-    - (+) Added support for static vector layers so you can use the same styling function for dynamic data
-    - Removed some logs
-- 0.0.9
-    - (+) Added support for a pattern fill
-- 0.0.8
-    - Bugfix for tile loading functions
-- 0.0.7
-    - (+) Added getCategoryByKey and getCategories to the map object
-    - (+) Added getLayerByKey to the category object
-    - (+) Added metadata to the layer object 
-    - Modified getFeaturesInView and getFeaturesUnderPixel to await the tiles to be loaded
-- 0.0.6
-    - (+) Added getFeaturesInView to mvt layers
-    - (+) Added async getFeaturesUnderPixel to mvt layers
-- 0.0.5
-  - Cleaned up code a bit
-  - Removed excessive logging
-  - Fixed a bug in the selection code
----
-
 ### Live Sample
 https://codesandbox.io/s/ol-themes-ext-v003-example-gvgr2
 
@@ -252,3 +212,50 @@ window.map.themes.getCategoryByKey("cat_test").getLayerByKey("lyr_test").filter.
 window.map.themes.getCategoryByKey("cat_test").getLayerByKey("lyr_test").filter.clear();
 
 ```
+
+
+
+
+---
+## Changelog
+- 0.0.21
+    - (+) Added a null check for category opacity
+    - (*) Inverted logic on filtering so that contains all ([]) returns true
+    - (*) Removed features with no property matching filter
+- 0.0.20
+    - (*) Fixed a couple typos in the filter engine
+    - (+) Added a clear on the when clause of the filter engine so you can clear a single filtered field
+- 0.0.19
+    - (*) Fixed a bug where Esri Feature Services wouldn't take the configured opacity
+- 0.0.17
+    - Changed optional chaining property accessors to regular accessors for the time being as webpack was throwing a fit
+- 0.0.16
+    - (+) Added initial support for filtering esri map service (export) layers
+- 0.0.15
+    - (+) Added initial support for filtering on MVT layers
+- 0.0.14
+    - (*) Fixed an issue with monoselection keys
+- 0.0.13
+    - (+) Added some support for the esri feature service renderers via 0l-esri-style
+- 0.0.12 (And 11 lol)
+    - Fixed an issue with clicking on multiple features from a MVT layer. The default ol function only returned the topmost feature.
+- 0.0.10
+    - (+) Added support for static vector layers so you can use the same styling function for dynamic data
+    - Removed some logs
+- 0.0.9
+    - (+) Added support for a pattern fill
+- 0.0.8
+    - Bugfix for tile loading functions
+- 0.0.7
+    - (+) Added getCategoryByKey and getCategories to the map object
+    - (+) Added getLayerByKey to the category object
+    - (+) Added metadata to the layer object 
+    - Modified getFeaturesInView and getFeaturesUnderPixel to await the tiles to be loaded
+- 0.0.6
+    - (+) Added getFeaturesInView to mvt layers
+    - (+) Added async getFeaturesUnderPixel to mvt layers
+- 0.0.5
+  - Cleaned up code a bit
+  - Removed excessive logging
+  - Fixed a bug in the selection code
+---

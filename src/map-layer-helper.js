@@ -207,8 +207,9 @@ export default class Themes {
       self.setLayerVisibilities(select, layers);
 
       // group category layers into a layer group
+      console.log(category)
       let group = new LayerGroup({
-        opacity: category.opacity,
+        opacity: isNaN(category.opacity) || category.opacity == null ? 1 : category.opacity,
         layers: layers
       });
       group.metadata =
@@ -393,6 +394,8 @@ export default class Themes {
         .getArray()
         .find(l => l.get('id') === data.category_key);
     if (category) {
+      if(isNaN(data.transparency) || data.transparency == null)
+        data.transparency = 1;
       category.setOpacity(data.transparency);
     }
   }
@@ -445,7 +448,7 @@ export default class Themes {
               visible: false,
               preload: 4,
               zIndex: endpoint.zIndex || 0,
-              opacity: data.opacity || 1,
+              opacity: isNaN(data.opacity) || data.opacity == null ? 1 : data.opacity,
               source: new XYZ({
                 crossOrigin: 'anonymous',
                 url: endpoint.url,
@@ -520,7 +523,7 @@ export default class Themes {
               visible: false,
               preload: 4,
               zIndex: endpoint.zIndex || 0,
-              opacity: data.opacity || 1,
+              opacity: isNaN(data.opacity) || data.opacity == null ? 1 : data.opacity,
               source: source,
               opaque: false
             });

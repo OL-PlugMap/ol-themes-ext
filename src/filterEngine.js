@@ -12,7 +12,10 @@ export const _buildEngine = (source,vtLayer) => {
   
     return {
       when: (field) => {
-        source.filterSet.mode = "OR"
+        
+        if(source.filterSet.mode == "NONE")
+          source.filterSet.mode = "OR"
+
         return {
           isAny: (values) => {
             source.filterSet.values[field] = { any: true, values: values };
@@ -87,62 +90,74 @@ export const _buildEngine = (source,vtLayer) => {
 
 export const _checkFilter = (source, feature) => {
     
-    if(source.filterSet)
-    {
-        let value = false;
+    if(source.filterSet) {
+      let value = false;
 
-        if(source.filterSet.mode == "AND")
-            value = true;
-     
-        let keys = Object.keys(source.filterSet.values);
-        let fields = Object.keys(feature.properties_);
+      if(source.filterSet.mode == "AND")
+          value = true;
+    
+      let keys = Object.keys(source.filterSet.values);
+      let fields = Object.keys(feature.properties_);
 
-        if(!keys.length)
-            value = true;
+      if(!keys.length)
+          value = true;
 
-        for(let field of keys)
-        {
-            getLogger()("Checking", field);
-            if(fields.includes(field))
-            {
-                let filterMatch = false;
-                let filter = source.filterSet.values[field];
-                let valueToTest = feature.properties_[field];
+      for(let field of keys) {
+          getLogger()("Checking", field);
+          let filterMatch = false;
 
-                getLogger()("Testing", valueToTest);
+          if(fields.includes(field)) {
+              let filter = source.filterSet.values[field];
+              let valueToTest = feature.properties_[field];
 
-                if(filter.any && filter.values.includes(valueToTest))
-                    filterMatch = true;
-                else if(filter.all)
-                {
-                    filterMatch = true;
-                    for(let value of filter.values)
-                        filterMatch = filterMatch && valueToTest == value;
+              getLogger()("Testing", valueToTest);
+
+              if(filter.any && filter.values.includes(valueToTest))
+                filterMatch = true;
+              else if(filter.all) {
+                filterMatch = true;
+                for(let value of filter.values)
+                    filterMatch = filterMatch && valueToTest == value;
+              }
+              else if(filter.contains && (valueToTest+"").indexOf(filter.values) >= 0)
+                  filterMatch = true;
+              else if(filter.containsAny) {
+                filterMatch = true;
+                for(let value of filter.values) {
+                  if ((valueToTest+"").indexOf(value) < 0) {
+                      filterMatch = false;
+                      break;
+                  }
                 }
-                else if(filter.contains && (valueToTest+"").indexOf(filter.values) >= 0)
-                    filterMatch = true;
-                else if(filter.containsAny)
-                    for(let value of filter.values)
-                        if ((valueToTest+"").indexOf(value) >= 0)
-                            filterMatch = true;
-                else if(filter.containsAll)
-                {
-                    filtermatch = true;
-                    for(let value of filter.values)
-                        filterMatch = filterMatch & ((valueToTest+"").indexOf(value) >= 0)
-                }                            
-                else if(filter.exactly && valueToTest == filter.values)
-                    filterMatch = true;
-                
-                if(source.filterSet.mode == "AND")
-                    value = value && filterMatch;
-                if(source.filterSet.mode == "OR")
-                    value = value || filterMatch;
-            }
-        }
+              }
+              else if(filter.containsAll) {
+                  filtermatch = true;
+                  for(let value of filter.values) {
+                    if(((valueToTest+"").indexOf(value) < 0)) {
+                      filterMatch = false;
+                      break;
+                    }
+                  }
+              }
+              else if(filter.exactly && valueToTest == filter.values) {
+                filterMatch = true;
+              }
+          }
+          else
+          {
+            filterMatch = false;
+          }
+              
+          if(source.filterSet.mode == "AND")
+              value = value && filterMatch;
 
-        return value;
+          if(source.filterSet.mode == "OR")
+              value = value || filterMatch;
+      }
+
+      return value;
     }
 
+    //When there is no filterSet, everything is shown
     return true;
 }

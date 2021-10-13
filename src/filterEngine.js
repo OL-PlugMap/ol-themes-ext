@@ -33,13 +33,13 @@ export const _buildEngine = (source,vtLayer) => {
             return _buildEngine(source, vtLayer);
           },
           containsAny: (values) => {
-            source.filterSet.values[field] = { containsAny: true, values: value };
+            source.filterSet.values[field] = { containsAny: true, values: values };
             getLogger()(source.filterSet);
             source.changed();
             return _buildEngine(source, vtLayer);
           },
           containsAll: (values) => {
-            source.filterSet.values[field] = { containsAll: true, values: value };
+            source.filterSet.values[field] = { containsAll: true, values: values };
             getLogger()(source.filterSet);
             source.changed();
             return _buildEngine(source, vtLayer);
@@ -49,6 +49,12 @@ export const _buildEngine = (source,vtLayer) => {
             getLogger()(source.filterSet);
             source.changed();
             return _buildEngine(source, vtLayer);              
+          },
+          clear : () => {
+            delete source.filterSet.values[field];
+            getLogger()(source.filterSet);
+            source.changed();
+            return _buildEngine(source, vtLayer); 
           }
         }
       },

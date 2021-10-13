@@ -8,6 +8,9 @@ This currently only supports ol 6.3. This package adds support to configure map 
 
 ---
 ## Changelog
+- 0.0.20
+    - (*) Fixed a couple typos in the filter engine
+    - (+) Added a clear on the when clause of the filter engine so you can clear a single filtered field
 - 0.0.19
     - (*) Fixed a bug where Esri Feature Services wouldn't take the configured opacity
 - 0.0.17
@@ -241,5 +244,11 @@ window.map.themes.getCategoryByKey("cat_test").getLayerByKey("lyr_test").filter.
 
 // If you want to display any feature that was in Iron or Cache or any combination of the two
 window.map.themes.getCategoryByKey("cat_test").getLayerByKey("lyr_test").filter.when("County").containsAny([ "Iron", "Cache" ]);
+
+// If you later decide to remove the filter on the county field you can call clear on when
+window.map.themes.getCategoryByKey("cat_test").getLayerByKey("lyr_test").filter.when("County").clear();
+
+// Or If you want to remove all filters
+window.map.themes.getCategoryByKey("cat_test").getLayerByKey("lyr_test").filter.clear();
 
 ```

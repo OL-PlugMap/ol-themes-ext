@@ -122,10 +122,10 @@ export const _checkFilter = (source, feature) => {
               else if(filter.contains && (valueToTest+"").indexOf(filter.values) >= 0)
                   filterMatch = true;
               else if(filter.containsAny) {
-                filterMatch = true;
+                filterMatch = false || filter.values.length == 0;
                 for(let value of filter.values) {
-                  if ((valueToTest+"").indexOf(value) < 0) {
-                      filterMatch = false;
+                  if ((valueToTest+"").indexOf(value) >= 0) {
+                      filterMatch = true;
                       break;
                   }
                 }

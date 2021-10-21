@@ -47,6 +47,34 @@ export const dynamicStyling = (endpoint, source) => {
       }
   
       renderFeature = feature.get("selected") || r;
+
+
+      if (endpoint.style.static) {
+        
+        if (!renderFeature) {
+          return new Style({
+            fill: new Fill({
+              color: "rgba(0,0,0,0)"
+            }),
+            stroke: new Stroke({
+              color: "rgba(0,0,0,0)",
+              width: 0
+            })
+          })
+        }
+
+        var style = endpoint.style.static;
+        
+        return new Style({
+          fill: new Fill({
+            color: style.fillColor || "rgba(255,0,0,0.5)"
+          }),
+          stroke: new Stroke({
+            color: style.strokeColor || "rgba(255,0,255,0.75)",
+            width: style.strokeWidth != undefined ? style.strokeWidth : 4
+          })
+        })
+      }
   
       let map = endpoint.style.dynamic.map;
       let field = endpoint.style.dynamic.field;
@@ -201,20 +229,20 @@ export const  _styleFunction = (endpoint, source, layer) => {
             });
         })
       }
-      else if (endpoint.style.static) {
-        var style = endpoint.style.static;
+      // else if (endpoint.style.static) {
+      //   var style = endpoint.style.static;
   
-        return new Style({
-          fill: new Fill({
-            color: style.fillColor || "rgba(255,0,0,0.5)"
-          }),
-          stroke: new Stroke({
-            color: style.strokeColor || "rgba(255,0,255,0.75)",
-            width: style.strokeWidth != undefined ? style.strokeWidth : 4
-          })
-        })
-      }
-      else if (endpoint.style.dynamic) {
+      //   return new Style({
+      //     fill: new Fill({
+      //       color: style.fillColor || "rgba(255,0,0,0.5)"
+      //     }),
+      //     stroke: new Stroke({
+      //       color: style.strokeColor || "rgba(255,0,255,0.75)",
+      //       width: style.strokeWidth != undefined ? style.strokeWidth : 4
+      //     })
+      //   })
+      // }
+      else if (endpoint.style.dynamic || endpoint.style.static) {
         return dynamicStyling(endpoint, source);
       }
     }

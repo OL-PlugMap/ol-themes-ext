@@ -218,6 +218,11 @@ window.map.themes.getCategoryByKey("cat_test").getLayerByKey("lyr_test").filter.
 
 ---
 ## Changelog
+- 0.0.23
+    - (*) Changed how filters are applied so it also can be used on layers with a static styling
+    - (+) Added a check to the getFeaturesUnderPixel call to ensure you pass in the proper data type
+- 0.0.22
+    - (*) Fixed an issue where if an empty set is provided to the filters it still failed to filter
 - 0.0.21
     - (+) Added a null check for category opacity
     - (*) Inverted logic on filtering so that contains all ([]) returns true

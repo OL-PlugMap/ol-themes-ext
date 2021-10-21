@@ -284,12 +284,15 @@ let _clearFilters = (source) => {
 
 
 let getId = (feature) => {
+  getLogger()("Getting id from", feature)
   let featureId = -1;
     if(isNaN(feature))
     {
+      getLogger()("Feature isnan", feature)
       if(feature.properties_)
       {
         featureId = feature.get("iso_a3"); //TODO
+        getLogger()("Got id", featureId)
       }
       else
       {
@@ -298,8 +301,10 @@ let getId = (feature) => {
     }
     else
     {
+      getLogger()("Feature is a number", feature);
       featureId = feature;
     }
+  getLogger("Returning id for feature", featureId);
   return featureId;
 }
 
@@ -330,6 +335,7 @@ let _refreshFunction = (source) =>
 
 let _loader = (endpoint) => {
   return function(tile, url) {
+    getLogger()("Loader", tile, url);
     tile.setLoader(function(extent, resolution, projection) {
       var fetchModel =
         {
@@ -339,18 +345,25 @@ let _loader = (endpoint) => {
           headers: endpoint.headers
         };
       tile.status__ = "loading";
+      getLogger()("Fetching", url);
       fetch(url, fetchModel).then(function(response) {
+        getLogger()("Fetched", response);
         tile.status__ = "loaded";
         response.arrayBuffer().then(function(data) {
+          getLogger()("Got AB", data)
           const format = tile.getFormat()
           const features = format.readFeatures(data, {
             extent: extent,
             featureProjection: projection
           });
           tile.setFeatures(features);
+        })
+        .catch(ex => {
+          getLogger()("Unable to get AB for tile", ex);
         });
       })
       .catch(err => {
+        getLogger()("Error Fetching", err);
         tile.status__ = "error";
       });
     });
@@ -412,6 +425,10 @@ let getLoadingPromise = (vtLayer) => {
 
 let _getFeaturesUnderPixel = (vtLayer) => {
   return async (pixel) => {
+    if(!pixel || !Array.isArray(pixel) || pixel.length != 2)
+    {
+      console.warn("Invalid parameter provided to getFeaturesUnderPixel. Expected an array with a length of 2. Got", pixel);
+    }
     getLogger()("Getting features at", pixel);
     return getLoadingPromise(vtLayer).then(async () => {
       getLogger()("Loaded tiles, calling getFeatures");

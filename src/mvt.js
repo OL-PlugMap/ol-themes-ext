@@ -351,15 +351,32 @@ let _loader = (endpoint) => {
         tile.status__ = "loaded";
         response.arrayBuffer().then(function(data) {
           getLogger()("Got AB", data)
-          const format = tile.getFormat()
-          const features = format.readFeatures(data, {
-            extent: extent,
-            featureProjection: projection
-          });
-          tile.setFeatures(features);
+          try
+          {
+            const format = tile.getFormat()
+            const features = format.readFeatures(data, {
+              extent: extent,
+              featureProjection: projection
+            });
+            tile.setFeatures(features);
+          }
+          catch(ex)
+          {
+            getLogger()("Unable to load tile", ex, tile, url);
+            tile.setFeatures([]);
+
+            try
+            {
+                const p = format.readFeatures(data, {
+                extent: extent,
+                featureProjection: projection
+              });
+            }
+            catch(eeeeee){}
+          }
         })
         .catch(ex => {
-          getLogger()("Unable to get AB for tile", ex);
+          getLogger()("Unable to get AB for tile", ex, tile, url);
         });
       })
       .catch(err => {

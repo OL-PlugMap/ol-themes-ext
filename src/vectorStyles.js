@@ -1,5 +1,5 @@
 import FillPattern from 'ol-ext/style/FillPattern';
-import { Style, Fill, Stroke } from 'ol/style';
+import { Style, Fill, Stroke, Circle as CircleStyle, Text } from 'ol/style';
 import { _checkFilter } from './filterEngine'
 
 
@@ -15,6 +15,7 @@ export const pattern = (style) => {
 
 
 export const dynamicStyling = (endpoint, source) => {
+  console.log("Dynamic Styling")
     return function (feature) {
       getLogger()(feature);
       if (source.highlightFeats[feature.getId()]) {
@@ -25,7 +26,23 @@ export const dynamicStyling = (endpoint, source) => {
           stroke: new Stroke({
             color: "rgba(255,255,0,0)",
             width: 0
-          })
+          }),
+          image: new CircleStyle({
+            radius: 10,
+            stroke: new Stroke({
+              color: '#fff',
+            }),
+            fill: new Fill({
+              color: '#3399CC',
+            }),
+          }),
+          text: new Text({
+            text: "F",
+            fill: new Fill({
+              color: '#fff',
+            }),
+          }),
+          zIndex: 999
         })
       }
   
@@ -59,7 +76,22 @@ export const dynamicStyling = (endpoint, source) => {
             stroke: new Stroke({
               color: "rgba(0,0,0,0)",
               width: 0
-            })
+            }),
+            image: new CircleStyle({
+              radius: 10,
+              stroke: new Stroke({
+                color: '#fff',
+              }),
+              fill: new Fill({
+                color: '#3399CC',
+              }),
+            }),
+            text: new Text({
+              text: "F",
+              fill: new Fill({
+                color: '#fff',
+              }),
+            }),
           })
         }
 
@@ -72,7 +104,22 @@ export const dynamicStyling = (endpoint, source) => {
           stroke: new Stroke({
             color: style.strokeColor || "rgba(255,0,255,0.75)",
             width: style.strokeWidth != undefined ? style.strokeWidth : 4
-          })
+          }),
+          image: new CircleStyle({
+            radius: 10,
+            stroke: new Stroke({
+              color: '#fff',
+            }),
+            fill: new Fill({
+              color: '#3399CC',
+            }),
+          }),
+          text: new Text({
+            text: "F",
+            fill: new Fill({
+              color: '#fff',
+            }),
+          }),
         })
       }
   
@@ -86,7 +133,22 @@ export const dynamicStyling = (endpoint, source) => {
           stroke: new Stroke({
             color: "rgba(0,0,0,0)",
             width: 0
-          })
+          }),
+          image: new CircleStyle({
+            radius: 10,
+            stroke: new Stroke({
+              color: '#fff',
+            }),
+            fill: new Fill({
+              color: '#3399CC',
+            }),
+          }),
+          text: new Text({
+            text: "F",
+            fill: new Fill({
+              color: '#fff',
+            }),
+          }),
         })
       } else if (feature.get("selected")) {
         return new Style({
@@ -96,7 +158,22 @@ export const dynamicStyling = (endpoint, source) => {
           stroke: new Stroke({
             color: "rgba(255,255,0,1)",
             width: 1
-          })
+          }),
+          image: new CircleStyle({
+            radius: 10,
+            stroke: new Stroke({
+              color: '#fff',
+            }),
+            fill: new Fill({
+              color: '#3399CC',
+            }),
+          }),
+          text: new Text({
+            text: "F",
+            fill: new Fill({
+              color: '#fff',
+            }),
+          }),
         })
       } else if ( feature && ( (feature.properties_ && feature.properties_[field]) || feature.get && feature.get(field) ) ) {
         var val = feature.properties_ ? feature.properties_[field] + "" : feature.get(field) + "";
@@ -122,7 +199,22 @@ export const dynamicStyling = (endpoint, source) => {
             stroke: new Stroke({
               color: "rgba(0,0,0,0)",
               width: 4
-            })
+            }),
+            image: new CircleStyle({
+              radius: 10,
+              stroke: new Stroke({
+                color: '#fff',
+              }),
+              fill: new Fill({
+                color: '#3399CC',
+              }),
+            }),
+            text: new Text({
+              text: "F",
+              fill: new Fill({
+                color: '#fff',
+              }),
+            }),
           })
         }
       }
@@ -135,11 +227,112 @@ export const dynamicStyling = (endpoint, source) => {
           stroke: new Stroke({
             color: "rgba(0,0,0,0.75)",
             width: 4
-          })
+          }),
+          image: new CircleStyle({
+            radius: 10,
+            stroke: new Stroke({
+              color: '#fff',
+            }),
+            fill: new Fill({
+              color: '#3399CC',
+            }),
+          }),
+          text: new Text({
+            text: "F",
+            fill: new Fill({
+              color: '#fff',
+            }),
+          }),
         })
       }
   
     }
+}
+
+const staticStyling = (endpoint, source) => {
+  var style = endpoint.style.static;
+     
+  let styleConf = {};
+
+  if (style.fillColor) {
+    styleConf.fill = new Fill({
+      color: style.fillColor || "rgba(255,0,0,0.5)"
+    });
+
+  }
+
+  if (style.strokeColor) {
+    styleConf.stroke = new Stroke({
+      color: style.strokeColor || "rgba(255,0,255,0.75)",
+      width: style.strokeWidth != undefined ? style.strokeWidth : 4
+    });
+  }
+
+  if (style.image) {
+    if(style.image.type == "circle") {
+      styleConf.image = new CircleStyle({
+        radius: style.image.radius != undefined ? style.image.radius : 10,
+        stroke: new Stroke({
+          color: style.image.strokeColor || '#fff',
+        }),
+        fill: new Fill({
+          color: style.image.fillColor || '#3399CC',
+        })
+      });
+    }
+    else if(style.image.type == "icon") {
+      styleConf.image = new Icon({
+        src: style.image.src || '',
+        anchor: style.image.anchor || [0.5, 0.5],
+        anchorXUnits: style.image.anchorXUnits || 'fraction',
+        anchorYUnits: style.image.anchorYUnits || 'fraction',
+        scale: style.image.scale || 1,
+        rotation: style.image.rotation || 0,
+        opacity: style.image.opacity || 1,
+        color: style.image.color || '#000',
+        crossOrigin: style.image.crossOrigin || 'anonymous'
+      });
+    }
+  }
+
+  if (style.text) {
+    if(style.text.static)
+    {
+      styleConf.text = new Text({
+        text: style.text.static,
+        font: style.text.font || '12px Calibri,sans-serif',
+        fill: new Fill({
+          color: style.text.fillColor || '#fff',
+        })
+      });
+    }
+    else if(style.text.dynamic)
+    {
+      return function(feature) {
+        var val = "";
+        if(feature.properties_ && feature.properties_[style.text.dynamic])
+          val = feature.properties_[style.text.dynamic] + "";
+
+        styleConf.text = new Text({
+          text: val,
+          font: style.text.font || '12px Calibri,sans-serif',
+          fill: new Fill({
+            color: style.text.fillColor || '#fff',
+          }),
+          stroke: new Stroke({
+            color: style.text.strokeColor || '#fff',
+            width: style.text.strokeWidth != undefined ? style.text.strokeWidth : 1
+          })
+        });
+        return new Style(styleConf);
+
+      }
+    }
+
+    //TODO: dynamic text
+  }
+
+  return new Style(styleConf);
 }
 
 export const  _styleFunction = (endpoint, source, layer) => {
@@ -229,24 +422,15 @@ export const  _styleFunction = (endpoint, source, layer) => {
             });
         })
       }
-      // else if (endpoint.style.static) {
-      //   var style = endpoint.style.static;
-  
-      //   return new Style({
-      //     fill: new Fill({
-      //       color: style.fillColor || "rgba(255,0,0,0.5)"
-      //     }),
-      //     stroke: new Stroke({
-      //       color: style.strokeColor || "rgba(255,0,255,0.75)",
-      //       width: style.strokeWidth != undefined ? style.strokeWidth : 4
-      //     })
-      //   })
-      // }
-      else if (endpoint.style.dynamic || endpoint.style.static) {
+      else if (endpoint.style.dynamic) {
         return dynamicStyling(endpoint, source);
+      }
+      else if (endpoint.style.static) {
+        return staticStyling(endpoint, source);
       }
     }
     else {
+      console.log("Static styling");
       return new Style({
         fill: new Fill({
           color: endpoint.fillColor || "rgba(255,0,0,0.5)"
@@ -254,7 +438,22 @@ export const  _styleFunction = (endpoint, source, layer) => {
         stroke: new Stroke({
           color: endpoint.strokeColor || "rgba(255,0,255,0.75)",
           width: style.strokeWidth != undefined ? style.strokeWidth : 4
-        })
+        }),
+        // image: new CircleStyle({
+        //   radius: 10,
+        //   stroke: new Stroke({
+        //     color: '#fff',
+        //   }),
+        //   fill: new Fill({
+        //     color: '#3399CC',
+        //   }),
+        // }),
+        text: new Text({
+          text: "F",
+          fill: new Fill({
+            color: '#fff',
+          }),
+        }),
       })
     }
   };

@@ -52,7 +52,8 @@ export const generate = (data,core) => {
       crossOrigin: 'anonymous',
       ratio: 1,
       maxZoom: 26,
-      tileGrid: tileGrid
+      tileGrid: tileGrid,
+      duration: 0
       // tileGrid: new TileGrid(
       //     { tileSize:[2048,2048]
       //       , resolutions:[]

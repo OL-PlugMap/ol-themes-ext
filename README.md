@@ -218,6 +218,12 @@ window.map.themes.getCategoryByKey("cat_test").getLayerByKey("lyr_test").filter.
 
 ---
 ## Changelog
+- 0.0.25
+    - (+) Added cross fade
+    - (*) Fixed an issue with highlighting on statically styled vector layers
+- 0.0.24
+    - (+) Added text options for adding labels to vector layers
+    - (*) Improved static styling performance a little
 - 0.0.23
     - (*) Changed how filters are applied so it also can be used on layers with a static styling
     - (+) Added a check to the getFeaturesUnderPixel call to ensure you pass in the proper data type

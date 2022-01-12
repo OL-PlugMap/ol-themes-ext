@@ -54,6 +54,19 @@ export function convertLayer(oldValue) {
     return newValue;
 }
 
+const processCrossfade = (crossfade) => {
+    if(!crossfade)
+        return undefined;
+    console.log("Processing crossfade", crossfade);
+    return {
+        from: crossfade.from,
+        to: crossfade.to,
+        duration: crossfade.duration,
+        startZoom: crossfade.startZoom,
+        endZoom: crossfade.endZoom,
+    }
+}
+
 export function convertConfig(config) {
     if(isConfig(config))
     {
@@ -118,7 +131,8 @@ export function convertConfig(config) {
                     selection_type: category.selectiveness,
                     selection_keys: category.defaultSelection
                 },
-                opacity: !isNaN(category.opacity) ? category.opacity : !isNaN(category.transparency) ? category.transparency : 1
+                opacity: !isNaN(category.opacity) ? category.opacity : !isNaN(category.transparency) ? category.transparency : 1,
+                crossfade: processCrossfade(category.crossfade)
             }
 
             if(!category.layerGroups)

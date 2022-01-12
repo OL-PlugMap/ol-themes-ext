@@ -14,251 +14,125 @@ export const pattern = (style) => {
   };
 
 
+const highlightStyleConf = {
+  fill: new Fill({ color: "rgba(255,255,100,0.7)" }),
+  stroke: new Stroke({ color: "rgba(255,255,0,1)", width: 1 }),
+  image: new CircleStyle({ radius: 10, stroke: new Stroke({ color: '#fff', }), fill: new Fill({ color: '#3399CC', }), }),
+  zIndex: 999
+};
+
+const highlightStyle = new Style(highlightStyleConf);
+
+const invisibleStyleConf = {
+  fill: new Fill({ color: "rgba(255,255,255,0.0)" }),
+  stroke: new Stroke({ color: "rgba(255,255,255,0.0)", width: 1 }),
+}
+
+const invisibleStyle = new Style(invisibleStyleConf);
+
+const selectedStyleConf = {
+  fill: new Fill({
+    color: "rgba(255,255,100,0.7)"
+  }),
+  stroke: new Stroke({
+    color: "rgba(255,255,0,1)",
+    width: 1
+  }),
+}
+
+const selectedStyle = new Style(selectedStyleConf);
+
+const unstyledConf = {
+  fill: new Fill({
+    color: "rgba(255,255,255,0.5)"
+  }),
+  stroke: new Stroke({
+    color: "rgba(0,0,0,0.75)",
+    width: 4
+  }),
+};
+
+const unstyled = new Style(unstyledConf);
+
+const featureIsHighlighted = (source, feature) => {
+  return source.highlightFeats[feature.getId()];
+}
+
+const featureShouldBeRendered = (source, feature) => {
+  var renderFeature = true;
+  var fev = feature.get("FilterEngine");
+  var r = true;
+
+  if (fev && fev.renderFn) {
+    fev.renderFn();
+    r = fev.render;
+  }
+
+  //Apparently webpack didnt take too kindly to ?. so I rewrote this to play nicer with it for now ...
+  if(source.filterSet && source.filterSet.mode && source.filterSet.mode != "NONE" )
+  {
+    let isRenderable = _checkFilter(source, feature);
+    getLogger()(isRenderable);
+    r = isRenderable;
+  }
+
+  renderFeature = feature.get("selected") || r;
+
+  return renderFeature;
+}
+
 export const dynamicStyling = (endpoint, source) => {
-  console.log("Dynamic Styling")
+
+  
     return function (feature) {
-      getLogger()(feature);
-      if (source.highlightFeats[feature.getId()]) {
-        return new Style({
-          fill: new Fill({
-            color: "rgba(255,255,0,1)"
-          }),
-          stroke: new Stroke({
-            color: "rgba(255,255,0,0)",
-            width: 0
-          }),
-          image: new CircleStyle({
-            radius: 10,
-            stroke: new Stroke({
-              color: '#fff',
-            }),
-            fill: new Fill({
-              color: '#3399CC',
-            }),
-          }),
-          text: new Text({
-            text: "F",
-            fill: new Fill({
-              color: '#fff',
-            }),
-          }),
-          zIndex: 999
-        })
+      let styleConf = {};
+
+      if (featureIsHighlighted(source,feature)) {
+        return highlightStyle;
       }
   
-      var renderFeature = true;
-      var fev = feature.get("FilterEngine");
-      var r = true;
-  
-      if (fev && fev.renderFn) {
-        fev.renderFn();
-        r = fev.render;
-      }
+      var renderFeature = featureShouldBeRendered(source, feature);
 
-      //Apparently webpack didnt take too kindly to ?. so I rewrote this to play nicer with it for now ...
-      if(source.filterSet && source.filterSet.mode && source.filterSet.mode != "NONE" )
-      {
-        let isRenderable = _checkFilter(source, feature);
-        getLogger()(isRenderable);
-        r = isRenderable;
-      }
-  
-      renderFeature = feature.get("selected") || r;
-
-
-      if (endpoint.style.static) {
-        
-        if (!renderFeature) {
-          return new Style({
-            fill: new Fill({
-              color: "rgba(0,0,0,0)"
-            }),
-            stroke: new Stroke({
-              color: "rgba(0,0,0,0)",
-              width: 0
-            }),
-            image: new CircleStyle({
-              radius: 10,
-              stroke: new Stroke({
-                color: '#fff',
-              }),
-              fill: new Fill({
-                color: '#3399CC',
-              }),
-            }),
-            text: new Text({
-              text: "F",
-              fill: new Fill({
-                color: '#fff',
-              }),
-            }),
-          })
-        }
-
-        var style = endpoint.style.static;
-        
-        return new Style({
-          fill: new Fill({
-            color: style.fillColor || "rgba(255,0,0,0.5)"
-          }),
-          stroke: new Stroke({
-            color: style.strokeColor || "rgba(255,0,255,0.75)",
-            width: style.strokeWidth != undefined ? style.strokeWidth : 4
-          }),
-          image: new CircleStyle({
-            radius: 10,
-            stroke: new Stroke({
-              color: '#fff',
-            }),
-            fill: new Fill({
-              color: '#3399CC',
-            }),
-          }),
-          text: new Text({
-            text: "F",
-            fill: new Fill({
-              color: '#fff',
-            }),
-          }),
-        })
-      }
   
       let map = endpoint.style.dynamic.map;
       let field = endpoint.style.dynamic.field;
+
       if (!renderFeature) {
-        return new Style({
-          fill: new Fill({
-            color: "rgba(0,0,0,0)"
-          }),
-          stroke: new Stroke({
-            color: "rgba(0,0,0,0)",
-            width: 0
-          }),
-          image: new CircleStyle({
-            radius: 10,
-            stroke: new Stroke({
-              color: '#fff',
-            }),
-            fill: new Fill({
-              color: '#3399CC',
-            }),
-          }),
-          text: new Text({
-            text: "F",
-            fill: new Fill({
-              color: '#fff',
-            }),
-          }),
-        })
+        return invisibleStyle;
       } else if (feature.get("selected")) {
-        return new Style({
-          fill: new Fill({
-            color: "rgba(255,255,100,0.7)"
-          }),
-          stroke: new Stroke({
-            color: "rgba(255,255,0,1)",
-            width: 1
-          }),
-          image: new CircleStyle({
-            radius: 10,
-            stroke: new Stroke({
-              color: '#fff',
-            }),
-            fill: new Fill({
-              color: '#3399CC',
-            }),
-          }),
-          text: new Text({
-            text: "F",
-            fill: new Fill({
-              color: '#fff',
-            }),
-          }),
-        })
+        return selectedStyle;
       } else if ( feature && ( (feature.properties_ && feature.properties_[field]) || feature.get && feature.get(field) ) ) {
         var val = feature.properties_ ? feature.properties_[field] + "" : feature.get(field) + "";
         if (map[val]) {
           var style = map[val];
-          return new Style({
-            fill: style.pattern ? pattern(style) : new Fill({
-              color: style.fillColor || "rgba(255,0,0,0.5)"
-            }),
-            stroke: new Stroke({
-              color: style.strokeColor || "rgba(255,0,255,0.75)",
-              width: style.strokeWidth != undefined ? style.strokeWidth : 4
-            })
-          })
+
+          let styleConf = convertToStyleConf(style);
+
+          return new Style(styleConf);
         }
         else {
-          //Need default style
-  
-          return new Style({
-            fill: new Fill({
-              color: "rgba(255,255,255,0)"
-            }),
-            stroke: new Stroke({
-              color: "rgba(0,0,0,0)",
-              width: 4
-            }),
-            image: new CircleStyle({
-              radius: 10,
-              stroke: new Stroke({
-                color: '#fff',
-              }),
-              fill: new Fill({
-                color: '#3399CC',
-              }),
-            }),
-            text: new Text({
-              text: "F",
-              fill: new Fill({
-                color: '#fff',
-              }),
-            }),
-          })
+          return invisibleStyle;
         }
       }
       else
       {
-        return new Style({
-          fill: new Fill({
-            color: "rgba(255,255,255,0.5)"
-          }),
-          stroke: new Stroke({
-            color: "rgba(0,0,0,0.75)",
-            width: 4
-          }),
-          image: new CircleStyle({
-            radius: 10,
-            stroke: new Stroke({
-              color: '#fff',
-            }),
-            fill: new Fill({
-              color: '#3399CC',
-            }),
-          }),
-          text: new Text({
-            text: "F",
-            fill: new Fill({
-              color: '#fff',
-            }),
-          }),
-        })
+        return unstyled;
       }
   
     }
 }
 
-const staticStyling = (endpoint, source) => {
-  var style = endpoint.style.static;
-     
+const convertToStyleConf = (style) => {
   let styleConf = {};
-
-  if (style.fillColor) {
-    styleConf.fill = new Fill({
-      color: style.fillColor || "rgba(255,0,0,0.5)"
-    });
-
+  
+  if(style.pattern) {
+    styleConf.fill = pattern(style);
+  } else if (style.fillColor) {
+    styleConf.fill = new Fill({ color: style.fillColor || "rgba(255,0,0,0.5)" });
+  }
+  else
+  {
+    styleConf.fill = new Fill({ color: "rgba(255,255,255,0)" });
   }
 
   if (style.strokeColor) {
@@ -298,15 +172,28 @@ const staticStyling = (endpoint, source) => {
   if (style.text) {
     if(style.text.static)
     {
-      styleConf.text = new Text({
-        text: style.text.static,
-        font: style.text.font || '12px Calibri,sans-serif',
-        fill: new Fill({
-          color: style.text.fillColor || '#fff',
-        })
-      });
+      styleConf.text = new Text({ text: style.text.static, font: style.text.font || '12px Calibri,sans-serif', fill: new Fill({ color: style.text.fillColor || '#fff', }) });
     }
-    else if(style.text.dynamic)
+  }
+
+}
+
+const staticStyling = (endpoint, source) => {
+  var style = endpoint.style.static;
+     
+  let highlightStyleConf = {};
+
+  highlightStyleConf.fill = new Fill({ color: "rgba(255,255,100,0.7)" });
+  highlightStyleConf.stroke = new Stroke({ color: "rgba(255,255,0,1)", width: 1 });
+  highlightStyleConf.image = new CircleStyle({ radius: 10, stroke: new Stroke({ color: '#fff', }), fill: new Fill({ color: '#3399CC', }), });
+  highlightStyleConf.zIndex = 999;
+
+  
+  let styleConf = convertToStyleConf(style);
+
+
+  if (style.text) {
+    if(style.text.dynamic)
     {
       return function(feature) {
         var val = "";
@@ -324,15 +211,25 @@ const staticStyling = (endpoint, source) => {
             width: style.text.strokeWidth != undefined ? style.text.strokeWidth : 1
           })
         });
+
+        if (source.highlightFeats[feature.getId()]) {
+          return highlightStyle;
+          
+        }
+
         return new Style(styleConf);
 
       }
     }
-
-    //TODO: dynamic text
   }
 
-  return new Style(styleConf);
+  return function(feature) {
+    //console.log("Static Style Feature", feature);
+    if (source.highlightFeats[feature.getId()]) {
+      return new Style(highlightStyleConf);
+    }
+    return new Style(styleConf);
+  }
 }
 
 export const  _styleFunction = (endpoint, source, layer) => {
@@ -448,12 +345,12 @@ export const  _styleFunction = (endpoint, source, layer) => {
         //     color: '#3399CC',
         //   }),
         // }),
-        text: new Text({
-          text: "F",
-          fill: new Fill({
-            color: '#fff',
-          }),
-        }),
+        // text: new Text({
+        //   text: "F",
+        //   fill: new Fill({
+        //     color: '#fff',
+        //   }),
+        // }),
       })
     }
   };

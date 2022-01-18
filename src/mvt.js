@@ -350,7 +350,6 @@ let _loader = (endpoint) => {
         getLogger()("Fetched", response);
         tile.status__ = "loaded";
         response.arrayBuffer().then(function(data) {
-          getLogger()("Got AB", data)
           try
           {
             const format = tile.getFormat()
@@ -358,12 +357,15 @@ let _loader = (endpoint) => {
               extent: extent,
               featureProjection: projection
             });
+            getLogger()("Got features", url, features);
             tile.setFeatures(features);
+            tile.status__ = "loaded";
           }
           catch(ex)
           {
             getLogger()("Unable to load tile", ex, tile, url);
             tile.setFeatures([]);
+            tile.status__ = "loaded";
 
             try
             {
@@ -372,16 +374,23 @@ let _loader = (endpoint) => {
                 featureProjection: projection
               });
             }
-            catch(eeeeee){}
+            catch(eeeeee){
+              getLogger()("Unable to read features for tile", ex, tile, url);
+              tile.setFeatures([]);    
+            }
+            tile.status__ = "loaded";
           }
         })
         .catch(ex => {
           getLogger()("Unable to get AB for tile", ex, tile, url);
+          tile.setFeatures([]);
         });
       })
       .catch(err => {
         getLogger()("Error Fetching", err);
-        tile.status__ = "error";
+        // In the event there is an error setting the status to error would be wise however, when a tile state is set to error the rest of the map starts doing weird things.
+        tile.setFeatures([]);
+        tile.status__ = "loaded";
       });
     });
   }

@@ -230,7 +230,12 @@ export default class Themes {
 
   getLayerByKey(category) {
     return (key) => {
-      let matchingLayers = category.getLayersArray().filter(layer => {
+      let matchingLayers = category.getLayers().getArray().filter(layer => {
+        if(!layer.metadata)
+        {  
+          console.log("FIX ME", layer);
+          return false;
+        }
         return layer.metadata.key === key;
       });
       if(matchingLayers)
@@ -240,7 +245,7 @@ export default class Themes {
 
   getVisibleLayers(category) {
     return () => {
-      let matchingLayers = category.getLayersArray().filter(layer => {
+      let matchingLayers = category.getLayers().getArray().filter(layer => {
         return layer.getVisible();
       });
 
@@ -252,7 +257,7 @@ export default class Themes {
     return function(layerToSelect) {
       if(typeof layerToSelect == "string")
       {
-        var lyrs = category.getLayersArray();
+        var lyrs = category.getLayers().getArray();
 
         var filt = lyrs.filter(a => a.get('id') == layerToSelect)
 
@@ -299,7 +304,7 @@ export default class Themes {
     return function(layerToSelect) {
       if(typeof layerToSelect == "string")
       {
-        var filt = category.getLayersArray().filter(a => a.get('id') == layerToSelect)
+        var filt = category.getLayers().getArray().filter(a => a.get('id') == layerToSelect)
         if(filt && filt.length)
           layerToSelect = filt[0];
         else
@@ -359,12 +364,13 @@ export default class Themes {
 
   setLayerVisibilities(selection, layers) {
     let toggleLayer = function (layer, isMatch) {
-      if (layer instanceof LayerGroup) {
+      // if (layer instanceof LayerGroup) {
+      //   console.log("Its a layer group folks!")
+      //   layer.setVisible(isMatch);
+      //   layer.getLayers().getArray().forEach(child => child.setVisible(isMatch));
+      // } else {
         layer.setVisible(isMatch);
-        layer.getLayers().getArray().forEach(child => child.setVisible(isMatch));
-      } else {
-        layer.setVisible(isMatch);
-      }
+      //}
     };
 
     switch (selection.selection_type) {
@@ -406,13 +412,36 @@ export default class Themes {
     // endpoints or as a single layer if it only has one endpoint
     let groupLayers = function (layers) {
       if (layers.length > 1) {
+        console.log("Grouping these layers");
         let group = new LayerGroup({ layers: layers });
         group.set('id', data.key);
         window.layerMap[data.key] = group;
         group.metadata =
           { key : data.key,
-            name: data.name
-          }
+            name: data.name,
+            isGroup: true
+          };
+
+        let oldVis = group.setVisible;
+        let oldOpac = group.setOpacity;
+
+        group.setVisible = function(vis) {
+          console.log("Setting visibility of group", vis, this);
+          oldVis.call(group, vis);
+          this.getLayers().getArray().forEach(layer => {
+            layer.setVisible(vis);
+          });
+        };
+
+        group.setOpacity = function(opac) {
+          console.log("Setting opacity on group", opac, this);
+          oldOpac.call(group, opac);
+          this.getLayers().getArray().forEach(layer => {
+            layer.setOpacity(opac);
+          });
+        };
+
+
         return group;
       } else if (layers.length === 1) {
         layers[0].set('id', data.key);
@@ -443,6 +472,7 @@ export default class Themes {
           layers = staticVector.generate(data, core);
           return groupLayers(layers);
         case "xyz":
+          console.log(data.config.value.endpoints);
           layers = data.config.value.endpoints.map(endpoint => {
             let lyr = new TileLayer({
               visible: false,
@@ -463,6 +493,8 @@ export default class Themes {
             lyr.set('name', data.name);
             return lyr;
           });
+
+          console.log
 
           return groupLayers(layers);
 

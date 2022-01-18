@@ -218,6 +218,8 @@ window.map.themes.getCategoryByKey("cat_test").getLayerByKey("lyr_test").filter.
 
 ---
 ## Changelog
+- 0.0.26
+    - (*) General bugfixes
 - 0.0.25
     - (+) Added cross fade
     - (*) Fixed an issue with highlighting on statically styled vector layers

@@ -176,6 +176,39 @@ const convertToStyleConf = (style) => {
     }
   }
 
+  return styleConf;
+}
+
+const staticStylingWithDynamicTextLabels = (endpoint, source, styleConf, style) => {
+  return function(feature) {
+    if(!styleConf)
+    {
+      styleConf = convertToStyleConf(style);
+    }
+    var val = "";
+    if(feature.properties_ && feature.properties_[style.text.dynamic])
+      val = feature.properties_[style.text.dynamic] + "";
+
+    styleConf.text = new Text({
+      text: val,
+      font: style.text.font || '12px Calibri,sans-serif',
+      fill: new Fill({
+        color: style.text.fillColor || '#fff',
+      }),
+      stroke: new Stroke({
+        color: style.text.strokeColor || '#fff',
+        width: style.text.strokeWidth != undefined ? style.text.strokeWidth : 1
+      })
+    });
+
+    if (source.highlightFeats[feature.getId()]) {
+      return highlightStyle;
+      
+    }
+
+    return new Style(styleConf);
+
+  }
 }
 
 const staticStyling = (endpoint, source) => {
@@ -189,42 +222,17 @@ const staticStyling = (endpoint, source) => {
   highlightStyleConf.zIndex = 999;
 
   
-  let styleConf = convertToStyleConf(style);
+  const styleConf = convertToStyleConf(style);
 
 
   if (style.text) {
     if(style.text.dynamic)
     {
-      return function(feature) {
-        var val = "";
-        if(feature.properties_ && feature.properties_[style.text.dynamic])
-          val = feature.properties_[style.text.dynamic] + "";
-
-        styleConf.text = new Text({
-          text: val,
-          font: style.text.font || '12px Calibri,sans-serif',
-          fill: new Fill({
-            color: style.text.fillColor || '#fff',
-          }),
-          stroke: new Stroke({
-            color: style.text.strokeColor || '#fff',
-            width: style.text.strokeWidth != undefined ? style.text.strokeWidth : 1
-          })
-        });
-
-        if (source.highlightFeats[feature.getId()]) {
-          return highlightStyle;
-          
-        }
-
-        return new Style(styleConf);
-
-      }
+      return staticStylingWithDynamicTextLabels(endpoint, source, styleConf, style);
     }
   }
 
   return function(feature) {
-    //console.log("Static Style Feature", feature);
     if (source.highlightFeats[feature.getId()]) {
       return new Style(highlightStyleConf);
     }
@@ -327,7 +335,6 @@ export const  _styleFunction = (endpoint, source, layer) => {
       }
     }
     else {
-      console.log("Static styling");
       return new Style({
         fill: new Fill({
           color: endpoint.fillColor || "rgba(255,0,0,0.5)"

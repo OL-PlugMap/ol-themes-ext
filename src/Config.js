@@ -47,7 +47,23 @@ export function convertLayer(oldValue) {
     newValue.config.value = {
         endpoints: oldValue[targetKey].endpoints,
         maxZoom: oldValue[targetKey].maxZoom,
-        minZoom: oldValue[targetKey].minZoom,
+        minZoom: oldValue[targetKey].minZoom
+    }
+
+    if(targetKey === "mvt")
+    {
+        newValue.config.value.declutter = oldValue[targetKey].declutter;
+        let clusterSettings = {};
+        
+        if(oldValue[targetKey].cluster)
+        {
+            console.log("Found cluster settings", oldValue[targetKey].cluster);
+            clusterSettings.enabled = true;
+            clusterSettings.distance = oldValue[targetKey].cluster.distance;
+            clusterSettings.minDistance = oldValue[targetKey].cluster.minDistance;
+
+            newValue.config.value.cluster = clusterSettings;
+        }
     }
 
 

@@ -1,5 +1,11 @@
 import VectorTileLayer from 'ol/layer/VectorTile';
+import { Group as LayerGroup } from "ol/layer.js";
+import VectorLayer from 'ol/layer/Vector';
+
 import VectorTileSource from 'ol/source/VectorTile';
+
+import {Cluster, Vector as VectorSource} from 'ol/source';
+
 import MVT from 'ol/format/MVT';
 
 import { _styleFunction } from './vectorStyles'
@@ -572,6 +578,7 @@ export const generate = (data, core) => {
           format: new MVT({
             idProperty: 'id'
           }),
+          tileSize: endpoint.tileSize === undefined ? 256 : endpoint.tileSize,
           url: url
         });
 
@@ -599,11 +606,11 @@ export const generate = (data, core) => {
           }
         }
 
+        console.log(data);
         var vtLayer = new VectorTileLayer({
-          declutter: true,
+          declutter: data.config.value.declutter === true,
           source: source,
-          zIndex: endpoint.zIndex || 1000
-
+          zIndex: endpoint.zIndex || 1000,
         });
 
         vtLayer.style = _styleFunction(endpoint, source, vtLayer);
@@ -632,6 +639,70 @@ export const generate = (data, core) => {
         vtLayer.on('postrender', handlePostRender(source, vtLayer));
         source.on('tileloadend', handlePostRender(source, vtLayer));
         source.on('tileloaderror', handlePostRender(source, vtLayer));
+
+        if(data.config.value.cluster && data.config.value.cluster.enabled)
+        {
+          console.log("Clistering enabled");
+
+          const clusterSource = new Cluster({
+            distance: data.config.value.cluster.distance,
+            minDistanc: data.config.value.cluster.minDistance,
+            source: source,
+          });
+
+          const clusters = new VectorLayer({
+            source: clusterSource,
+            style: function (feature) {
+              const size = feature.get('features').length;
+              let style = styleCache[size];
+              if (!style) {
+                style = new Style({
+                  image: new CircleStyle({
+                    radius: 10,
+                    stroke: new Stroke({
+                      color: '#fff',
+                    }),
+                    fill: new Fill({
+                      color: '#3399CC',
+                    }),
+                  }),
+                  text: new Text({
+                    text: size.toString(),
+                    fill: new Fill({
+                      color: '#fff',
+                    }),
+                  }),
+                });
+                styleCache[size] = style;
+              }
+              return style;
+            },
+          });
+
+          let group = new LayerGroup({layers: [ vtLayer, clusters ]});
+
+          let oldVis = group.setVisible;
+          let oldOpac = group.setOpacity;
+
+          group.setVisible = function(vis) {
+            console.log("Setting visibility of group", vis, this);
+            oldVis.call(group, vis);
+            this.getLayers().getArray().forEach(layer => {
+              layer.setVisible(vis);
+            });
+          };
+
+          group.setOpacity = function(opac) {
+            console.log("Setting opacity on group", opac, this);
+            oldOpac.call(group, opac);
+            this.getLayers().getArray().forEach(layer => {
+              layer.setOpacity(opac);
+            });
+          };
+
+
+          vtLayer = group;
+        }
 
         return vtLayer;
       });

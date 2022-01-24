@@ -441,6 +441,16 @@ export default class Themes {
           });
         };
 
+        if(layers[0].getFeaturesInView)
+        {
+          group.getFeaturesInView = layers[0].getFeaturesInView;
+        }
+
+        if(layers[0].getFeaturesUnderPixel)
+        {
+          group.getFeaturesUnderPixel = layers[0].getFeaturesUnderPixel;
+        }
+
 
         return group;
       } else if (layers.length === 1) {

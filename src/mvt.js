@@ -339,7 +339,7 @@ let _refreshFunction = (source) =>
   };
 };
 
-let _loader = (endpoint) => {
+let _loaderOld = (endpoint) => {
   return function(tile, url) {
     getLogger()("Loader", tile, url);
     tile.setLoader(function(extent, resolution, projection) {
@@ -347,15 +347,17 @@ let _loader = (endpoint) => {
         {
           method: 'GET',
           mode: 'cors',
-          cache: 'no-cache',
           headers: endpoint.headers
         };
-      tile.status__ = "loading";
+      if(endpoint.nocache)
+      {
+        fetchModel.cache = 'no-cache';
+      }
+      
       getLogger()("Fetching", url);
-      fetch(url, fetchModel).then(function(response) {
-        getLogger()("Fetched", response);
-        tile.status__ = "loaded";
-        response.arrayBuffer().then(function(data) {
+      return fetch(url, fetchModel).then(function(response) {
+        
+        return response.arrayBuffer().then(function(data) {
           try
           {
             const format = tile.getFormat()
@@ -365,26 +367,11 @@ let _loader = (endpoint) => {
             });
             getLogger()("Got features", url, features);
             tile.setFeatures(features);
-            tile.status__ = "loaded";
           }
           catch(ex)
           {
             getLogger()("Unable to load tile", ex, tile, url);
             tile.setFeatures([]);
-            tile.status__ = "loaded";
-
-            try
-            {
-                const p = format.readFeatures(data, {
-                extent: extent,
-                featureProjection: projection
-              });
-            }
-            catch(eeeeee){
-              getLogger()("Unable to read features for tile", ex, tile, url);
-              tile.setFeatures([]);    
-            }
-            tile.status__ = "loaded";
           }
         })
         .catch(ex => {
@@ -396,11 +383,71 @@ let _loader = (endpoint) => {
         getLogger()("Error Fetching", err);
         // In the event there is an error setting the status to error would be wise however, when a tile state is set to error the rest of the map starts doing weird things.
         tile.setFeatures([]);
-        tile.status__ = "loaded";
       });
     });
   }
 };
+
+let _loader = (endpoint) => {
+  return function(tile, url) {
+    getLogger()("Loader", tile, url);
+    tile.setLoader(function(extent, resolution, projection) {
+      {
+        const xhr = new XMLHttpRequest();
+        xhr.open(
+          'GET',
+          typeof url === 'function' ? url(extent, resolution, projection) : url,
+          true
+        );
+        for(let header in endpoint.headers)
+        {
+          xhr.setRequestHeader(header, endpoint.headers[header]);
+        }
+
+        xhr.responseType = 'arraybuffer';
+        
+        xhr.withCredentials = false;
+
+        /**
+         * @param {Event} event Event.
+         * @private
+         */
+        xhr.onload = function (event) {
+          let format = tile.getFormat();
+          // status will be 0 for file:// urls
+          if (!xhr.status || (xhr.status >= 200 && xhr.status < 300)) {
+            const type = format.getType();
+            /** @type {Document|Node|Object|string|undefined} */
+            let source;
+            source = /** @type {ArrayBuffer} */ (xhr.response);
+            
+            if (source) {
+              tile.onLoad(
+                /** @type {Array<import("./Feature.js").default>} */
+                (
+                  format.readFeatures(source, {
+                    extent: extent,
+                    featureProjection: projection,
+                  })
+                ),
+                format.readProjection(source)
+              );
+            } else {
+              tile.onError();
+            }
+          } else {
+            tile.onError();
+          }
+        };
+        /**
+         * @private
+         */
+        xhr.onerror = tile.onError;
+        xhr.send();
+      }
+    })
+  }
+}
 
 
 let _deduplicateFeatures = (features) => {

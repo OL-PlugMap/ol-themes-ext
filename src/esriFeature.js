@@ -198,6 +198,7 @@ export const generate = (data, core) => {
 
     let source = new VectorSource({
       loader: function (extent, resolution, projection) {
+        let outfields = endpoint.outfields ? endpoint.outfields.join(",") : "*";
         var url =
           endpoint.url +
           '/query/?f=json&' +
@@ -213,7 +214,7 @@ export const generate = (data, core) => {
               extent[3] +
               ',"spatialReference":{"wkid":102100}}'
           ) +
-          '&geometryType=esriGeometryEnvelope&inSR=102100&outFields=*' +
+          '&geometryType=esriGeometryEnvelope&inSR=102100&outFields=' + outfields
           '&outSR=102100';
         window.fetch(url)
         .then((response) => { return response.text() })

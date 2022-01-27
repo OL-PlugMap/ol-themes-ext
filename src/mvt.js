@@ -393,6 +393,7 @@ let _loader = (endpoint) => {
     getLogger()("Loader", tile, url);
     tile.setLoader(function(extent, resolution, projection) {
       {
+        tile.status__ = "loading"
         const xhr = new XMLHttpRequest();
         xhr.open(
           'GET',
@@ -422,27 +423,39 @@ let _loader = (endpoint) => {
             source = /** @type {ArrayBuffer} */ (xhr.response);
             
             if (source) {
+              let feats = [];
+              try {
+                feats = format.readFeatures(source, {
+                  extent: extent,
+                  featureProjection: projection,
+                })
+              } catch (e) {
+                getLogger()("Tile failed to load", e, tile, url);
+              }
               tile.onLoad(
                 /** @type {Array<import("./Feature.js").default>} */
-                (
-                  format.readFeatures(source, {
-                    extent: extent,
-                    featureProjection: projection,
-                  })
+                ( feats
                 ),
                 format.readProjection(source)
               );
+              
+              tile.status__ = "loaded"
             } else {
               tile.onError();
+              tile.status__ = "error"
             }
           } else {
             tile.onError();
+            tile.status__ = "error"
           }
         };
         /**
          * @private
          */
-        xhr.onerror = tile.onError;
+        xhr.onerror = function() { 
+          tile.status__ = "error"; 
+          tile.onError()
+        };
         xhr.send();
       }
     })

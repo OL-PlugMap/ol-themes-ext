@@ -171,58 +171,165 @@ export default class Themes {
     return layersMapped;
   }
 
+  makeGroup(groupConfig, layerRepository) {
+
+    let neededLayerKeys = groupConfig.layers.map(layer => {
+      return layer.key;
+    });
+
+    let layers = layerRepository.filter(lyr => {
+      return neededLayerKeys.includes(lyr.key);
+    })
+
+    let groupGroup = new LayerGroup({
+      opacity: isNaN(groupConfig.opacity) || groupConfig.opacity == null ? 1 : groupConfig.opacity,
+      layers: layers
+    });
+
+    groupGroup.name = groupConfig.name;
+    groupGroup.key = groupConfig.key || groupConfig.group_key;
+    groupGroup.type = "group";
+    groupGroup.opacity = isNaN(groupConfig.opacity) || groupConfig.opacity == null ? 1 : groupConfig.opacity;
+    groupGroup.getLayerByKey = this.getLayerByKey(groupGroup);
+    groupGroup.layers = layers;
+
+    let oldSetOpacity = groupGroup.setOpacity;
+    groupGroup.setOpacity = function(opacity) {
+      if(oldSetOpacity)
+        oldSetOpacity.call(groupGroup, opacity);
+      else
+        this.getLayers().getArray().forEach(layer => {
+          layer.setOpacity(opacity);
+        });
+
+      this.opacity = opacity;
+    };
+
+    let oldSetVisibility = groupGroup.setVisibility;
+    groupGroup.setVisible = function(visible) {
+      if(oldSetVisibility)
+        oldSetVisibility.call(groupGroup, visible);
+      else
+        this.getLayers().getArray().forEach(layer => {
+          layer.setVisible(visible);
+        });
+    };
+
+    groupGroup.getLayerByKey = function(key) {
+      let matchingLayers = groupGroup.getLayers().getArray().filter(layer => {
+        return layer.metadata ? layer.metadata.key === key : layer.key === key;
+      });
+
+      if(matchingLayers)
+        return matchingLayers[0];
+    };
+
+    return groupGroup;
+  }
+
+  makeCategory(category) {
+    getLogger()("Make Category", category);
+
+    const select = category.selection;
+
+    // Special handling in the event a mono selection type's selection_key was saved into selection_keys array.
+    const isMono = select.selection_type === 'monoselection' || select.selection_type === 'monoselective';
+    if (isMono && !select.selection_key && Array.isArray(select.selection_keys)) {
+      select.selection_key = select.selection_keys[select.selection_keys.length - 1];
+    }
+    let selectionKeys = select.selection_key ? [ select.selection_key ] : select.selection_keys;
+
+    let layers = [];
+    if(category.layers)
+    {
+      layers = category.layers.map(layer => {
+        let lyr = this.makeLayer(layer);
+        if(selectionKeys.includes(layer.key))
+          lyr.setVisible(true);
+
+        return lyr;
+      });
+    }
+
+    // show layers that are part of current selection
+    // and hide ones that are not part of current selection
+    this.setLayerVisibilities(select, layers);
+
+    // group category layers into a layer group
+    let categoryGroup = new LayerGroup({
+      opacity: isNaN(category.opacity) || category.opacity == null ? 1 : category.opacity,
+      layers: layers
+    });
+    categoryGroup.metadata =
+      { key : category.category_key,
+        name: category.category_name
+      };
+      categoryGroup.set('id', category.category_key);
+      categoryGroup.set('selection_type', select.selection_type)
+      categoryGroup.set('selection_keys', selectionKeys)
+      categoryGroup.selectLayer = this.selectLayer(categoryGroup)
+      categoryGroup.deselectLayer = this.deselectLayer(categoryGroup)
+      categoryGroup.getLayerByKey = this.getLayerByKey(categoryGroup);
+
+    // This is the new metadata for the category
+
+    categoryGroup.key = category.category_key;
+    categoryGroup.name = category.name;
+
+    categoryGroup.transparency = categoryGroup.getOpacity();
+
+    let oldSetOpacity = categoryGroup.setOpacity;
+    categoryGroup.setOpacity = function(opacity) {
+      oldSetOpacity.call(categoryGroup, opacity);
+      categoryGroup.transparency = opacity;
+    }
+    categoryGroup.setTransparancy = categoryGroup.setOpacity;
+    categoryGroup.type = "category";
+
+    categoryGroup.getSelectionType = function() {
+      return select.selection_type;
+    }
+
+    categoryGroup.getSelectionKeys = function() {
+      return categoryGroup.get('selection_keys');
+    }
+
+    categoryGroup.isMonoSelective = function() {
+      return categoryGroup.get('selection_type') === 'monoselective' || categoryGroup.get('selection_type') === 'monoselection';
+    }
+
+    categoryGroup.isMultiphasic = function() {
+      return category.multiphasic === true || category.canChangeOpacity === true;
+    }
+
+    categoryGroup.canChangeOpacity = function() {
+      return category.multiphasic === true || category.canChangeOpacity === true;
+    }
+
+    /* TODO Set Groups */
+    if(category.groups && category.groups.length > 0)
+    {
+      categoryGroup.groups = category.groups.map(group => {
+        return this.makeGroup(group, layers);
+      });
+    }
+
+    return categoryGroup;
+  }
+
   /*
     This converts a list of "categories" into a list of layer groups
     It also adds extensions needed to control category selection
   */
   addLayerCategories(categories) {
+    getLogger()("Adding categories")
     let self = this;
     let core = this.core;
     let map = core.getMap();
     let groups = categories.map(category => {
       getLogger()("Processing", category);
-
-      const select = category.selection;
-      // Special handling in the event a mono selection type's selection_key was saved into selection_keys array.
-      const isMono = select.selection_type === 'monoselection' || select.selection_type === 'monoselective';
-      if (isMono && !select.selection_key && Array.isArray(select.selection_keys)) {
-        select.selection_key = select.selection_keys[select.selection_keys.length - 1];
-      }
-      let selectionKeys = select.selection_key ? [ select.selection_key ] : select.selection_keys;
-
-      let layers = [];
-      if(category.layers)
-      {
-        layers = category.layers.map(layer => {
-          let lyr = self.makeLayer.call(self, layer);
-          if(selectionKeys.includes(layer.key))
-            lyr.setVisible(true);
-
-          return lyr;
-        });
-      }
-
-      // show layers that are part of current selection
-      // and hide ones that are not part of current selection
-      self.setLayerVisibilities(select, layers);
-
-      // group category layers into a layer group
-      console.log(category)
-      let group = new LayerGroup({
-        opacity: isNaN(category.opacity) || category.opacity == null ? 1 : category.opacity,
-        layers: layers
-      });
-      group.metadata =
-        { key : category.category_key,
-          name: category.category_name
-        }
-      group.set('id', category.category_key);
-      group.set('selection_type', select.selection_type)
-      group.set('selection_keys', selectionKeys)
-      group.selectLayer = this.selectLayer(group)
-      group.deselectLayer = this.deselectLayer(group)
-      group.getLayerByKey = this.getLayerByKey(group);
-      return group;
+      let cat = this.makeCategory(category);
+      return cat;
     });
     groups.forEach(group => map.addLayer(group));
     return groups;
@@ -233,7 +340,7 @@ export default class Themes {
       let matchingLayers = category.getLayers().getArray().filter(layer => {
         if(!layer.metadata)
         {  
-          console.log("FIX ME", layer);
+          getLogger()("FIX ME", layer);
           return false;
         }
         return layer.metadata.key === key;
@@ -406,107 +513,121 @@ export default class Themes {
     }
   }
 
-  makeLayer(data) {
-    getLogger()("Make layer", data);
+  groupLayers(layerConfig, layers) {
+    if (layers.length > 1) {
+      getLogger()("Grouping these layers");
+      let group = new LayerGroup({ layers: layers });
+      group.set('id', layerConfig.key);
+      window.layerMap[layerConfig.key] = group;
+      group.metadata =
+        { key : layerConfig.key,
+          name: layerConfig.name,
+          isGroup: true
+        };
+
+      let oldVis = group.setVisible;
+      let oldOpac = group.setOpacity;
+
+      group.setVisible = function(vis) {
+        getLogger()("Setting visibility of group", vis, this);
+        oldVis.call(group, vis);
+        this.getLayers().getArray().forEach(layer => {
+          layer.setVisible(vis);
+        });
+      };
+
+      group.setOpacity = function(opac) {
+        getLogger()("Setting opacity on group", opac, this);
+        oldOpac.call(group, opac);
+        this.getLayers().getArray().forEach(layer => {
+          layer.setOpacity(opac);
+        });
+      };
+
+      if(layers[0].getFeaturesInView)
+      {
+        group.getFeaturesInView = layers[0].getFeaturesInView;
+      }
+
+      if(layers[0].getFeaturesUnderPixel)
+      {
+        group.getFeaturesUnderPixel = layers[0].getFeaturesUnderPixel;
+      }
+
+      group = this.applyLayerMetadataFromConfig(group, layerConfig);
+
+      return group;
+    } else if (layers.length === 1) {
+      layers[0].set('id', layerConfig.key);
+      window.layerMap[layerConfig.key] = layers[0];
+      
+      layers[0] = this.applyLayerMetadataFromConfig(layers[0], layerConfig);
+
+      return layers[0];
+    } else {
+      throw new Error(`Could not make layer for ${layerConfig.key}`);
+    }
+  };
+
+  applyLayerMetadataFromConfig(layer, layerConfig) {
+    layer.metadata = layer.metadata || {};
+    
+    layer.metadata.key = layerConfig.key;
+    layer.key = layerConfig.key;
+
+    layer.metadata.name = layerConfig.name;
+    layer.name = layerConfig.name;
+
+    layer.metadata.type = "layer";
+    layer.type = "layer";
+
+    return layer;
+  }
+
+  makeLayer(layerConfig) {
+    getLogger()("Make layer", layerConfig);
     // finalizes layer as either a layer group if it has multiple
     // endpoints or as a single layer if it only has one endpoint
-    let groupLayers = function (layers) {
-      if (layers.length > 1) {
-        console.log("Grouping these layers");
-        let group = new LayerGroup({ layers: layers });
-        group.set('id', data.key);
-        window.layerMap[data.key] = group;
-        group.metadata =
-          { key : data.key,
-            name: data.name,
-            isGroup: true
-          };
-
-        let oldVis = group.setVisible;
-        let oldOpac = group.setOpacity;
-
-        group.setVisible = function(vis) {
-          console.log("Setting visibility of group", vis, this);
-          oldVis.call(group, vis);
-          this.getLayers().getArray().forEach(layer => {
-            layer.setVisible(vis);
-          });
-        };
-
-        group.setOpacity = function(opac) {
-          console.log("Setting opacity on group", opac, this);
-          oldOpac.call(group, opac);
-          this.getLayers().getArray().forEach(layer => {
-            layer.setOpacity(opac);
-          });
-        };
-
-        if(layers[0].getFeaturesInView)
-        {
-          group.getFeaturesInView = layers[0].getFeaturesInView;
-        }
-
-        if(layers[0].getFeaturesUnderPixel)
-        {
-          group.getFeaturesUnderPixel = layers[0].getFeaturesUnderPixel;
-        }
-
-
-        return group;
-      } else if (layers.length === 1) {
-        layers[0].set('id', data.key);
-        window.layerMap[data.key] = layers[0];
-        layers[0].metadata =
-          { key : data.key,
-            name: data.name
-          }
-        return layers[0];
-      } else {
-        throw new Error(`Could not make layer for ${data.key}`);
-      }
-    };
 
     try {
       let self = this;
       let core = this.core;
       let layers = null;
-      let layerType = data.config.type.toLowerCase();
+      let layerType = layerConfig.config.type.toLowerCase();
 
       getLogger()("Processing a layer with type", layerType);
 
       switch (layerType) {
         case "mvt":
-          layers = mvt.generate(data, core);
-          return groupLayers(layers);
+          layers = mvt.generate(layerConfig, core);
+          return this.groupLayers(layerConfig, layers);
         case "staticvector":
-          layers = staticVector.generate(data, core);
-          return groupLayers(layers);
+          layers = staticVector.generate(layerConfig, core);
+          return this.groupLayers(layerConfig, layers);
         case "xyz":
-          console.log(data.config.value.endpoints);
-          layers = data.config.value.endpoints.map(endpoint => {
+          getLogger()(layerConfig.config.value.endpoints);
+          layers = layerConfig.config.value.endpoints.map(endpoint => {
             let lyr = new TileLayer({
               visible: false,
               preload: 4,
               zIndex: endpoint.zIndex || 0,
-              opacity: isNaN(data.opacity) || data.opacity == null ? 1 : data.opacity,
+              opacity: isNaN(layerConfig.opacity) || layerConfig.opacity == null ? 1 : layerConfig.opacity,
               source: new XYZ({
                 crossOrigin: 'anonymous',
                 url: endpoint.url,
-                maxZoom: data.config.value.maxZoom || 26,
-                minZoom: data.config.value.minZoom || 1,
+                maxZoom: layerConfig.config.value.maxZoom || 26,
+                minZoom: layerConfig.config.value.minZoom || 1,
                 tileLoadFunction: (imageTile, src) => {
                   imageTile.getImage().src = src;
                 }
               })
             });
-            lyr.set('id', data.key);
-            lyr.set('name', data.name);
+            lyr.set('id', layerConfig.key);
+            lyr.set('name', layerConfig.name);
             return lyr;
           });
 
-          console.log
-
-          return groupLayers(layers);
+          return this.groupLayers(layerConfig, layers);
 
         case "wmts":
           var projection = get("EPSG:3857"),
@@ -520,7 +641,7 @@ export default class Themes {
             matrixIds[z] = z;
           }
 
-          layers = data.config.value.endpoints.map(endpoint => {
+          layers = layerConfig.config.value.endpoints.map(endpoint => {
             let source = new WMTS({
               crossOrigin: 'anonymous',
               matrixSet: 'webmercator',
@@ -528,7 +649,7 @@ export default class Themes {
               projection: projection,
               requestEncoding: 'REST',
               tileGrid: new WMTSTileGrid({
-                extent: data.config.value.extent,
+                extent: layerConfig.config.value.extent,
                 resolutions: resolutions,
                 matrixIds: matrixIds
               }),
@@ -554,7 +675,7 @@ export default class Themes {
                 configureSource(endpoint.tokenKey);
               } else {
                 self.pendingConfiguration.push({
-                  name: data.key,
+                  name: layerConfig.key,
                   fn: configureSource,
                   params: [endpoint.tokenKey]
                 });
@@ -565,16 +686,16 @@ export default class Themes {
               visible: false,
               preload: 4,
               zIndex: endpoint.zIndex || 0,
-              opacity: isNaN(data.opacity) || data.opacity == null ? 1 : data.opacity,
+              opacity: isNaN(layerConfig.opacity) || layerConfig.opacity == null ? 1 : layerConfig.opacity,
               source: source,
               opaque: false
             });
-            lyr.set('id', data.key);
-            lyr.set('name', data.name);
+            lyr.set('id', layerConfig.key);
+            lyr.set('name', layerConfig.name);
             return lyr;
           });
 
-          return groupLayers(layers);
+          return this.groupLayers(layerConfig, layers);
 
         case "wms":
           var projection = proj.get("EPSG:3857"),
@@ -586,7 +707,7 @@ export default class Themes {
             resolutions[z] = size / Math.pow(2, z);
           }
 
-          layers = data.config.value.endpoints.map(endpoint => {
+          layers = layerConfig.config.value.endpoints.map(endpoint => {
             //The random adds a random value to the parameter
             //essentially cache busting
             let customParams = {
@@ -622,7 +743,7 @@ export default class Themes {
                 configureSource(endpoint.tokenKey);
               } else {
                 self.pendingConfiguration.push({
-                  name: data.key,
+                  name: layerConfig.key,
                   fn: configureSource,
                   params: [endpoint.tokenKey]
                 });
@@ -631,33 +752,33 @@ export default class Themes {
 
             let lyr = new ImageLayer({
               zIndex: endpoint.zIndex || 0,
-              extent: data.config.value.extent,
+              extent: layerConfig.config.value.extent,
               source: source
             });
-            lyr.set('id', data.key);
-            lyr.set('name', data.name);
+            lyr.set('id', layerConfig.key);
+            lyr.set('name', layerConfig.name);
             return lyr;
           })
 
-          return groupLayers(laeyrs);
+          return this.groupLayers(layerConfig, layers);
 
         case "esrimapservice":
         case "esriexport":
-          layers = esriExport.generate(data,core);
-          return groupLayers(layers);
+          layers = esriExport.generate(layerConfig,core);
+          return this.groupLayers(layerConfig, layers);
 
         case "esrifeatureservice":
         case "esrifeature":
-            layers = esriFeature.generate(data,core);
-            return groupLayers(layers);
+            layers = esriFeature.generate(layerConfig, core);
+            return this.groupLayers(layerConfig, layers);
 
         default:
-          throw new Error(`Layer type '${data.config.type}' has not been implemented.`);
+          throw new Error(`Layer type '${layerConfig.config.type}' has not been implemented.`);
       }
     }
     catch (err) {
       debugger;
-      console.error("Error processing layer", data);
+      console.error("Error processing layer", layerConfig);
       console.error(err);
     }
 

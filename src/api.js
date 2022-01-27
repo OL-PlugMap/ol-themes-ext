@@ -146,12 +146,11 @@ export default class ol_themes_ext {
     
 
     initCategories(config, withConfig) {
+        getLogger()("Setting up", config);
         if(isConfig(config))
         {
             config = convertConfig(config);
         }
-
-        getLogger("Setting up", config);
 
         this.initThemes()
 

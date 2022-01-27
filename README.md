@@ -218,6 +218,9 @@ window.map.themes.getCategoryByKey("cat_test").getLayerByKey("lyr_test").filter.
 
 ---
 ## Changelog
+- 0.0.29
+    - (+) rewrote a portion of the library so that the returned categories have their metadata and groups and each of the groups have their metadata and layers and each of the layers have their metadata
+    - (*) fixed a bug where getFeaturesInView would return before all tiles were loaded
 - 0.0.26
     - (*) General bugfixes
 - 0.0.25

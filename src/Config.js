@@ -65,6 +65,10 @@ export function convertLayer(oldValue) {
             newValue.config.value.cluster = clusterSettings;
         }
     }
+    else if (targetKey === "wms" || targetKey === "wmts")
+    {
+        newValue.config.value.extent = oldValue[targetKey].extent;
+    }
 
 
     return newValue;

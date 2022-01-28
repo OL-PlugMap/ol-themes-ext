@@ -642,6 +642,29 @@ export default class Themes {
           }
 
           layers = layerConfig.config.value.endpoints.map(endpoint => {
+
+            let errors = [];
+            if(!endpoint.url || endpoint.url.indexOf("{TileMatrixSet}") == -1)
+            {
+              errors.push("Missing \"{TileMatrixSet}\" in WMTS endpoint");
+            }
+            if(!endpoint.url || endpoint.url.indexOf("{TileMatrix}") == -1)
+            {
+              errors.push("Missing \"{TileMatrix}\" in WMTS endpoint");
+            }
+            if(!endpoint.url || endpoint.url.indexOf("{TileRow}") == -1)
+            {
+              errors.push("Missing \"{TileRow}\" in WMTS endpoint");
+            }
+            if(!endpoint.url || endpoint.url.indexOf("{TileCol}") == -1)
+            {
+              errors.push("Missing \"{TileCol}\" in WMTS endpoint");
+            }
+            if(errors.length > 0)
+            {
+              console.error("Errors in WMTS endpoint", errors);
+            }
+
             let source = new WMTS({
               crossOrigin: 'anonymous',
               matrixSet: 'webmercator',
@@ -655,7 +678,8 @@ export default class Themes {
               }),
               style: 'default',
               opaque: false,
-              transparent: true
+              transparent: true,
+              url: endpoint.url
             });
             let configureSource = function (tokenKey) {
               if (core.services && core.services[tokenKey]) {
@@ -721,7 +745,8 @@ export default class Themes {
               ratio: 1,
               serverType: 'geoserver',
               resolutions: resolutions,
-              projection: projection
+              projection: projection,
+              url: endpoint.url
             });
 
             let configureSource = function (tokenKey) {

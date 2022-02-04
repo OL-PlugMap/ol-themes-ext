@@ -19,9 +19,22 @@ module.exports = {
   },
   plugins: [
     new CopyWebpackPlugin({
-        patterns: [
-            { from: 'src/*.d.ts', to: '[name][ext]' }
-        ]
+      patterns: [
+        { from: 'src/*.d.ts', to: '[name][ext]' }
+      ]
     })
-]
+  ],
+  // module: {
+  //   rules: [
+  //     {
+  //       test: /\.js$/,
+  //       use: 'babel-loader',
+  //       exclude: /node_modules/,
+  //       // query: {
+  //       //   presets: ['react', 'es2015', 'react-hmre'],
+  //       //   plugins: ['transform-class-properties']
+  //       // }
+  //     }
+  //   ]
+  // }
 };

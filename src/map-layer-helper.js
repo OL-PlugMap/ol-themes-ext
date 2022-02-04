@@ -554,6 +554,40 @@ export default class Themes {
         group.getFeaturesUnderPixel = layers[0].getFeaturesUnderPixel;
       }
 
+      let highlightLayers = layers.filter(l => l.highlight ? true : false);
+      
+      if(highlightLayers.length > 0)
+      {
+        group.highlight = (item) => {
+          highlightLayers.forEach((layer) => {
+            console.log("Calling highlight on layer", layer)
+            layer.highlight(item);
+          });
+        }
+      }
+
+      let unhighlightLayers = layers.filter(l => l.unhighlight ? true : false);
+      
+      if(unhighlightLayers.length > 0)
+      {
+        group.unhighlight = (item) => {
+          unhighlightLayers.forEach((layer) => {
+            layer.unhighlight(item);
+          });
+        }
+      }
+      
+      let unhighlightAllLayers = layers.filter(l => l.unhighlightAll ? true : false);
+      
+      if(unhighlightAllLayers.length > 0)
+      {
+        group.unhighlightAll = () => {
+          unhighlightAllLayers.forEach((layer) => {
+            layer.unhighlightAll();
+          });
+        }
+      }
+
       group = this.applyLayerMetadataFromConfig(group, layerConfig);
 
       return group;

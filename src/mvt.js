@@ -8,7 +8,7 @@ import {Cluster, Vector as VectorSource} from 'ol/source';
 
 import MVT from 'ol/format/MVT';
 
-import { _styleFunction } from './vectorStyles'
+import { ConfigurableStyle } from './vectorStyles'
 import { getLogger } from './logger';
 
 import { _buildEngine } from './filterEngine'
@@ -321,6 +321,13 @@ let _unhighlight = (source) => {
   };
 };
 
+let _unhighlightAll = (source) => {
+  return () => {
+    source.highlightFeats = [];
+    source.changed();
+  };
+};
+
 let _highlight = (source) => {
   source.highlightFeats = {};
   return (feature) => {
@@ -509,14 +516,14 @@ let getLoadingPromise = (vtLayer) => {
     {
       resolve_("Not Loading");
     }
-  }, 500);
+  }, 150);
 
 
   return promise;
 }
 
-let _getFeaturesUnderPixel = (vtLayer) => {
-  return async (pixel) => {
+let _getFeaturesUnderPixel = (vtLayer, map) => {
+  return async (pixel, event) => {
     if(!pixel || !Array.isArray(pixel) || pixel.length != 2)
     {
       console.warn("Invalid parameter provided to getFeaturesUnderPixel. Expected an array with a length of 2. Got", pixel);
@@ -524,10 +531,11 @@ let _getFeaturesUnderPixel = (vtLayer) => {
     getLogger()("Getting features at", pixel);
     return getLoadingPromise(vtLayer).then(async () => {
       getLogger()("Loaded tiles, calling getFeatures");
-      let coords = window.map.getCoordinateFromPixel(pixel);
+      
+      let coords = map.getCoordinateFromPixel(pixel);
       getLogger()("Coords", coords);
 
-      let zoom = window.map.getView().getZoom();
+      let zoom = map.getView().getZoom();
       getLogger()("Zoom", zoom);
 
       let buf = (25 - zoom);
@@ -649,23 +657,6 @@ export const generate = (data, core) => {
           source.setTileLoadFunction(loader);
         }
 
-        let configureSource = _configureSource;
-
-        if (endpoint.tokenKey) {
-          // if the token data has already been fetched and stored in core.services
-          // go ahead and configure the source w/ the data, otherwise, postpone
-          // the configuration until `setServicesCmd` has been triggered
-          if (core.services && core.services[endpoint.tokenKey]) {
-            configureSource(endpoint.tokenKey);
-          } else {
-            self.pendingConfiguration.push({
-              name: data.key,
-              fn: configureSource,
-              params: [endpoint.tokenKey]
-            });
-          }
-        }
-
         console.log(data);
         var vtLayer = new VectorTileLayer({
           declutter: data.config.value.declutter === true,
@@ -673,8 +664,10 @@ export const generate = (data, core) => {
           zIndex: endpoint.zIndex || 1000,
         });
 
-        vtLayer.style = _styleFunction(endpoint, source, vtLayer);
-        vtLayer.setStyle(_styleFunction(endpoint, source, vtLayer))
+        let moo = new ConfigurableStyle(endpoint, source, vtLayer);
+        vtLayer.moo = moo;
+        vtLayer.style = moo.getStyle;
+        vtLayer.setStyle(moo.getStyle)
 
         vtLayer.set('id', data.key);
         
@@ -683,6 +676,8 @@ export const generate = (data, core) => {
         vtLayer.highlight = _highlight(source);
 
         vtLayer.unhighlight = _unhighlight(source);
+
+        vtLayer.unhighlightAll = _unhighlightAll(source);
 
         vtLayer.applyFilters = _applyFilters(source, vtLayer);
 
@@ -694,7 +689,7 @@ export const generate = (data, core) => {
 
         vtLayer.getFeaturesInView = _getFeaturesInView(vtLayer, core.getMap())
 
-        vtLayer.getFeaturesUnderPixel = _getFeaturesUnderPixel(vtLayer);
+        vtLayer.getFeaturesUnderPixel = _getFeaturesUnderPixel(vtLayer, core.getMap());
       
         vtLayer.on('postrender', handlePostRender(source, vtLayer));
         source.on('tileloadend', handlePostRender(source, vtLayer));

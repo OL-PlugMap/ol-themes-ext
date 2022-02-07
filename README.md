@@ -218,6 +218,10 @@ window.map.themes.getCategoryByKey("cat_test").getLayerByKey("lyr_test").filter.
 
 ---
 ## Changelog
+- 0.1.1
+    - (*) Discovered the wonders of the files property in package.json to include all the required files
+- 0.1.0
+    - (-) Removed webpack bundling fromt he build process, the package should be significantly smaller now
 - 0.0.31
     - (+) Added support for configurable highlight styles on vector layers
     - (*) Revamped the vector styles to solve an issue related to global pollution a rewrite is close

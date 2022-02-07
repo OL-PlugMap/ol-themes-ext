@@ -657,7 +657,6 @@ export const generate = (data, core) => {
           source.setTileLoadFunction(loader);
         }
 
-        console.log(data);
         var vtLayer = new VectorTileLayer({
           declutter: data.config.value.declutter === true,
           source: source,
@@ -697,8 +696,6 @@ export const generate = (data, core) => {
 
         if(data.config.value.cluster && data.config.value.cluster.enabled)
         {
-          console.log("Clistering enabled");
-
           const clusterSource = new Cluster({
             distance: data.config.value.cluster.distance,
             minDistanc: data.config.value.cluster.minDistance,
@@ -740,7 +737,6 @@ export const generate = (data, core) => {
           let oldOpac = group.setOpacity;
 
           group.setVisible = function(vis) {
-            console.log("Setting visibility of group", vis, this);
             oldVis.call(group, vis);
             this.getLayers().getArray().forEach(layer => {
               layer.setVisible(vis);
@@ -748,7 +744,6 @@ export const generate = (data, core) => {
           };
 
           group.setOpacity = function(opac) {
-            console.log("Setting opacity on group", opac, this);
             oldOpac.call(group, opac);
             this.getLayers().getArray().forEach(layer => {
               layer.setOpacity(opac);

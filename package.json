@@ -2,7 +2,7 @@
   "name": "ol-themes-ext",
   "version": "0.0.31",
   "description": "Extension for openlayers that adds configuration driven map layers (aka themes)",
-  "main": "dist/ol-themes-ext.js",
+  "main": "dist/api.js",
   "typings": "dist/ol-themes-ext.d.ts",
   "scripts": {
     "build": "node scripts/build.js"
@@ -28,31 +28,53 @@
     "ol-ext": "^3.2.4"
   },
   "devDependencies": {
-    "@turf/area": "^6.3.0",
-    "@turf/boolean-within": "^6.3.0",
-    "@turf/buffer": "^6.3.0",
-    "@turf/circle": "^6.3.0",
-    "@turf/difference": "^6.3.0",
-    "@turf/helpers": "^6.3.0",
-    "@turf/projection": "^6.3.0",
-    "@turf/simplify": "^6.3.0",
-    "@turf/truncate": "^6.3.0",
-    "@turf/union": "^6.3.0",
-    "@turf/unkink-polygon": "^6.3.0",
+    "@babel/core": "^7.17.0",
+    "@babel/eslint-parser": "^7.17.0",
+    "@babel/preset-env": "^7.16.11",
+    "babel-loader": "^8.2.3",
     "babel-plugin-transform-class-properties": "^6.24.1",
     "chalk": "^4.1.0",
     "copy-webpack-plugin": "^8.1.1",
     "fs-extra": "^9.1.0",
+    "node-fetch": "^3.2.0",
     "ol": "^6.12.0",
+    "promise": "^8.1.0",
     "react-dev-utils": "^11.0.4",
-    "shpjs": "^3.6.3",
-    "sw-precache-webpack-plugin": "^1.0.0",
-    "text-encoding": "^0.7.0",
-    "uglifyjs-webpack-plugin": "^2.2.0",
     "webpack": "^5.28.0",
-    "webpack-manifest-plugin": "^3.1.0",
-    "wellknown": "^0.5.0",
-    "workbox-webpack-plugin": "^6.1.2",
-    "worker-loader": "^3.0.8"
+    "webpack-manifest-plugin": "^3.2.0"
+  },
+  "babel": {
+    "presets": [
+      [
+        "@babel/preset-env",
+        {
+          "useBuiltIns": "entry"
+        }
+      ]
+    ]
+  },
+  "jest": {
+    "collectCoverageFrom": [
+      "src/**/*.{js,jsx}"
+    ],
+    "setupFiles": [
+      "<rootDir>/config/polyfills.js"
+    ],
+    "testPathIgnorePatterns": [
+      "<rootDir>[/\\\\](build|docs|node_modules|scripts)[/\\\\]"
+    ],
+    "testEnvironment": "node",
+    "testURL": "http://localhost",
+    "transform": {
+      "^.+\\.(js|jsx)$": "<rootDir>/node_modules/babel-jest",
+      "^.+\\.css$": "<rootDir>/config/jest/cssTransform.js",
+      "^(?!.*\\.(js|jsx|css|json)$)": "<rootDir>/config/jest/fileTransform.js"
+    },
+    "transformIgnorePatterns": [
+      "[/\\\\]node_modules[/\\\\].+\\.(js|jsx)$"
+    ],
+    "moduleNameMapper": {
+      "^react-native$": "react-native-web"
+    }
   }
 }

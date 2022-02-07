@@ -5,6 +5,10 @@ import { _checkFilter } from './filterEngine'
 
 import { getLogger } from './logger'
 
+class test {
+  constructor() {}
+  moo = () => { console.log("moo") }
+}
 
 class ConfigurableStyleEngine {
   constructor() {
@@ -203,7 +207,6 @@ class ConfigurableStyleEngine {
       let style = that.style;
 
       if (that.source.highlightFeats[feature.getId()]) {
-        console.log("highlighted", that.style, that.highlightStyle);
         style = that.highlightStyle;
       }
 
@@ -223,7 +226,6 @@ class ConfigurableStyleEngine {
         offsetY: style.text.offsetY != undefined ? style.text.offsetY : 0,
       });
 
-      console.log("Returning style", that.styleConf);
       return new Style(that.styleConf);
 
     }
@@ -240,12 +242,9 @@ class ConfigurableStyleEngine {
     this.highlightStyleConf = null;
 
     if (this.highlightStyle) {
-      console.log("highlight style", this.highlightStyle);
       this.highlightStyleConf = this.convertToStyleConf(this.highlightStyle);
-      console.log("Converted", this.highlightStyleConf);
     }
     else {
-      console.log("no highlight style, using default");
       this.highlightStyleConf = {};
 
       this.highlightStyleConf.fill = new Fill({ color: "rgba(255,255,100,0.7)" });
@@ -254,7 +253,6 @@ class ConfigurableStyleEngine {
       this.highlightStyleConf.zIndex = 999;
     }
 
-    console.log("Applying highlight style to endpoint", this.endpoint, this.highlightStyleConf);
     this.endpoint.highlightStyle = this.highlightStyleConf;
 
 
@@ -272,11 +270,9 @@ class ConfigurableStyleEngine {
 
     return function (feature) {
       if (that.source.highlightFeats[feature.getId()]) {
-        console.log("highlight style", that.highlightStyleConf, feature, that.endpoint, that.source);
-        console.log("Returning highlight style");
         return new Style(that.highlightStyleConf);
       }
-      console.log("Returning style");
+
       return new Style(that.styleConf);
     }
   }

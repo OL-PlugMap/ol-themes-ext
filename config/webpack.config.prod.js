@@ -3,7 +3,7 @@ const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 module.exports = {
   entry: {
-    'ol-themes-ext': './src/api.js'
+    //'ol-themes-ext-webpack': './src/api.js'
   },
   devtool: 'source-map',
   output: {
@@ -20,21 +20,22 @@ module.exports = {
   plugins: [
     new CopyWebpackPlugin({
       patterns: [
-        { from: 'src/*.d.ts', to: '[name][ext]' }
+        { from: 'src/*.d.ts', to: '[name][ext]' },
+        { from: 'src/*.js', to: '[name][ext]' }
       ]
     })
   ],
-  // module: {
-  //   rules: [
-  //     {
-  //       test: /\.js$/,
-  //       use: 'babel-loader',
-  //       exclude: /node_modules/,
-  //       // query: {
-  //       //   presets: ['react', 'es2015', 'react-hmre'],
-  //       //   plugins: ['transform-class-properties']
-  //       // }
-  //     }
-  //   ]
-  // }
+  module: {
+    rules: [
+      {
+        test: /\.js$/,
+        use: [
+          { loader: 'babel-loader',
+            options: { presets: [ '@babel/preset-env' ] }
+          }
+        ],
+        exclude: /node_modules/,
+      }
+    ]
+  }
 };

@@ -1,7 +1,7 @@
 import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
 
-import { _styleFunction } from './vectorStyles'
+import { ConfigurableStyle } from './vectorStyles'
 
 
 
@@ -24,8 +24,10 @@ export const generate = (data, core) => {
           zIndex: endpoint.zIndex || 1000
         });
 
-        vLayer.style = _styleFunction(endpoint, source, vLayer);
-        vLayer.setStyle(_styleFunction(endpoint, source, vLayer))
+        let moo = new ConfigurableStyle(endpoint, source, vtLayer);
+
+        vLayer.style = moo.getStyle;
+        vLayer.setStyle(moo.getStyle)
 
         vLayer.set('id', data.key);
         

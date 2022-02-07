@@ -36,7 +36,7 @@ export function convertLayer(oldValue) {
     
     if(!targetKey)
     {
-        console.log("Encountered an unknown config for layer", oldValue);
+        console.error("Encountered an unknown config for layer", oldValue);
         return undefined;
     }
 
@@ -57,7 +57,6 @@ export function convertLayer(oldValue) {
         
         if(oldValue[targetKey].cluster)
         {
-            console.log("Found cluster settings", oldValue[targetKey].cluster);
             clusterSettings.enabled = true;
             clusterSettings.distance = oldValue[targetKey].cluster.distance;
             clusterSettings.minDistance = oldValue[targetKey].cluster.minDistance;
@@ -77,7 +76,7 @@ export function convertLayer(oldValue) {
 const processCrossfade = (crossfade) => {
     if(!crossfade)
         return undefined;
-    console.log("Processing crossfade", crossfade);
+        
     return {
         from: crossfade.from,
         to: crossfade.to,
@@ -103,7 +102,7 @@ export function convertConfig(config) {
                 layerMap[layer.key] = layer;
             }
             else
-                console.log("Failed to convert layer! Not adding to map")
+                console.error("Failed to convert layer! Not adding to map")
         }
 
         for(var group of config.layerGroups)
@@ -128,7 +127,7 @@ export function convertConfig(config) {
                 if(layerMap[layerKey])
                     newGroup.layers.push(layerMap[layerKey]);
                 else
-                    console.log("Could not find a mapped layer with key", layerKey)
+                    console.warn("Could not find a mapped layer with key", layerKey)
             }
 
             groupMap[group.key] = newGroup;

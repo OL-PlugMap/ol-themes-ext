@@ -19,6 +19,7 @@ export default class ol_themes_ext {
         this.crossfadespeed = 50; // 1/20th of a second
         
         return map;
+
     }
 
     initThemes() {

@@ -314,6 +314,8 @@ export default class Themes {
       });
     }
 
+    categoryGroup.config = category;
+
     return categoryGroup;
   }
 

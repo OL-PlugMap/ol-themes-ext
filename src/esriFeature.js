@@ -214,7 +214,7 @@ export const generate = (data, core) => {
               extent[3] +
               ',"spatialReference":{"wkid":102100}}'
           ) +
-          '&geometryType=esriGeometryEnvelope&inSR=102100&outFields=' + outfields
+          '&geometryType=esriGeometryEnvelope&inSR=102100&outSR=102100&outFields=' + outfields
           '&outSR=102100';
         window.fetch(url)
         .then((response) => { return response.text() })

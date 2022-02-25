@@ -13,6 +13,7 @@ import { getLogger } from './logger';
 
 import { _buildEngine } from './filterEngine'
 
+import TileState from 'ol/TileState'
 
 let _filterEngine = (source) => {
   (feature) => {
@@ -400,6 +401,7 @@ let _loader = (endpoint) => {
     getLogger()("Loader", tile, url);
     tile.setLoader(function(extent, resolution, projection) {
       {
+        tile.setState(TileState.LOADING);
         tile.status__ = "loading"
         const xhr = new XMLHttpRequest();
         xhr.open(
@@ -446,12 +448,15 @@ let _loader = (endpoint) => {
                 format.readProjection(source)
               );
               
-              tile.status__ = "loaded"
+            tile.setState(TileState.LOADED);
+            tile.status__ = "loaded"
             } else {
+              tile.setState(TileState.ERROR);
               tile.onError();
               tile.status__ = "error"
             }
           } else {
+            tile.setState(TileState.ERROR);
             tile.onError();
             tile.status__ = "error"
           }
@@ -460,6 +465,7 @@ let _loader = (endpoint) => {
          * @private
          */
         xhr.onerror = function() { 
+          tile.setState(TileState.ERROR);
           tile.status__ = "error"; 
           tile.onError()
         };

@@ -556,6 +556,18 @@ export default class Themes {
         group.getFeaturesUnderPixel = layers[0].getFeaturesUnderPixel;
       }
 
+      if(layers[0].getLegend)
+      {
+        group.getLegend = layers[0].getLegend;
+      }
+      else
+      {
+        group.getLegend = async function() {
+          return [{value:"Not Implemented"}];
+        }
+      }
+
+
       let highlightLayers = layers.filter(l => l.highlight ? true : false);
       
       if(highlightLayers.length > 0)
@@ -616,6 +628,13 @@ export default class Themes {
 
     layer.metadata.type = "layer";
     layer.type = "layer";
+
+    if(!layer.getLegend)
+    {
+      layer.getLegend = async function() {
+        return [{value:"Not Implemented"}];
+      }
+    }
 
     return layer;
   }

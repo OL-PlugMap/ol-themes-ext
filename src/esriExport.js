@@ -3,7 +3,7 @@ import { Tile as TileLayer } from "ol/layer.js";
 import { TileArcGISRest } from "ol/source";
 import TileGrid from "ol/tilegrid/TileGrid"
 
-import {getLogger} from './logger'
+import { getLogger } from './logger'
 import { get } from "ol/proj";
 import { getWidth } from "ol/extent";
 
@@ -14,8 +14,8 @@ import { _buildEngine } from './filterEngine'
 
 
 
-export const generate = (data,core) => {
-    let layers = data.config.value.endpoints.map(endpoint => {
+export const generate = (data, core) => {
+  let layers = data.config.value.endpoints.map(endpoint => {
     //The random adds a random value to the parameter
     //essentually cache busting  
     let customParams = {
@@ -64,54 +64,50 @@ export const generate = (data,core) => {
     });
 
     source.setTileLoadFunction((image, src) => {
-      if(source.filterSet)
-      {
+      if (source.filterSet) {
         getLogger()("Filter set", source.filterSet);
-        if(source.filterSet.mode != "NONE")
-        {
+        if (source.filterSet.mode != "NONE") {
           let condStr = "";
           let conds = [];
 
 
           let keys = Object.keys(source.filterSet.values);
 
-          if(!keys.length)
-              value = true;
+          if (!keys.length)
+            value = true;
 
-          for(let field of keys)
-          {
-              
-              let filter = source.filterSet.values[field];
+          for (let field of keys) {
 
-              getLogger()("Checking", field, filter);
+            let filter = source.filterSet.values[field];
 
-              if(filter.any)
-                  conds.push(`${field} = ANY(${filter.values.map(a=>"'"+a+"'").join(",")})`);
-              else if(filter.all)
-              {
-                conds.push(`${field} = ALL(${filter.values.map(a=>"'"+a+"'").join(",")})`);
-              }
-              else if(filter.contains)
-                conds.push(`${field} LIKE '%${filter.values}%'`);
-              else if(filter.containsAny)
-                conds.push(filter.values.map(a => `${field} LIKE '%${a}%'`).join(" OR "));
-              else if(filter.containsAll)
-                conds.push(filter.values.map(a => `${field} LIKE '%${a}%'`).join(" AND "));                
-              else if(filter.exactly)
-                conds.push(`${field} = '${filter.values}'`);
+            getLogger()("Checking", field, filter);
 
-              getLogger()("Conds is now", conds)
+            if (filter.any)
+              conds.push(`${field} = ANY(${filter.values.map(a => "'" + a + "'").join(",")})`);
+            else if (filter.all) {
+              conds.push(`${field} = ALL(${filter.values.map(a => "'" + a + "'").join(",")})`);
+            }
+            else if (filter.contains)
+              conds.push(`${field} LIKE '%${filter.values}%'`);
+            else if (filter.containsAny)
+              conds.push(filter.values.map(a => `${field} LIKE '%${a}%'`).join(" OR "));
+            else if (filter.containsAll)
+              conds.push(filter.values.map(a => `${field} LIKE '%${a}%'`).join(" AND "));
+            else if (filter.exactly)
+              conds.push(`${field} = '${filter.values}'`);
+
+            getLogger()("Conds is now", conds)
           }
 
           conds = conds.map(a => `(${a})`);
-                        
-          if(source.filterSet.mode == "AND")
-              condStr = conds.join(" AND ");
-          if(source.filterSet.mode == "OR")
+
+          if (source.filterSet.mode == "AND")
+            condStr = conds.join(" AND ");
+          if (source.filterSet.mode == "OR")
             condStr = conds.join(" OR ");
 
 
-          if(source.filterSet.layer != null)
+          if (source.filterSet.layer != null)
             condStr = source.filterSet.layer + ":" + condStr;
           else
             condStr = "all:" + condStr; //TODO: I am unsure if this is even valid
@@ -202,7 +198,7 @@ export const generate = (data,core) => {
       };
 
     source.oldChanged = source.changed;
-    
+
     //This is a hack because calling changed wont clear the tile cache automatically
     source.changed = () => {
       source.tileCache.clear();
@@ -261,6 +257,41 @@ export const generate = (data,core) => {
       source.setUrl(endpoint.url);
       source.params_ = customParams;
     }
+
+    lyr.getLegend = async function () {
+      if (endpoint.legendEntries) {
+        return endpoint.legendEntries;
+      }
+
+
+      try {
+        // Cal to the legend endpoint\
+        let legendUrl = `${endpoint.url}/legend?f=json`;
+        if(endpoint.legend && endpoint.legend.size && endpoint.legend.size.length == 2)
+          legendUrl += `&size=${endpoint.legend.size[0]},${endpoint.legend.size[1]}`;
+        let legendValues = await (await fetch(legendUrl)).json();
+        let entries = [];
+        legendValues.layers.map(layerEntry => {
+          layerEntry.legend.forEach(legendEntry => {
+            entries.push({
+              label: legendEntry.label,
+              value: legendEntry.values && legendEntry.values.length ? legendEntry.values.join(", ") : legendEntry.value,
+              icon: "data:" + legendEntry.contentType + ";base64," + legendEntry.imageData,
+              iconWidth: legendEntry.width,
+              iconHeight: legendEntry.height,
+            });
+          });
+        })
+
+        endpoint.legendEntries = entries;
+      }
+      catch (ex) {
+        getLogger()("Error getting legend", ex);
+      }
+
+      return endpoint.legendEntries;
+    }
+
     return lyr;
   });
 

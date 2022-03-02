@@ -10,7 +10,7 @@ import { get } from "ol/proj";
 import { getWidth } from "ol/extent";
 import {tile as tileStrategy} from 'ol/loadingstrategy';
 import { getLogger, getWarning } from "./logger";
-import { createStyleFunction, setMapProjection } from 'ol-esri-style';
+import { createStyleFunction, setMapProjection, readEsriStyleDefinitions } from 'ol-esri-style';
 
 
 const esrijsonFormat = new EsriJSON();
@@ -98,6 +98,7 @@ export const generate = (data, core) => {
         {
           getLogger()("Style", meta);
           setMapProjection(core.getMap().getView().getProjection());
+          
           createStyleFunction(meta).then(styleFunction => {
             getLogger()("Debug stuff here");
             endpoint.styleFunction = (feature, resolution) => {
@@ -144,6 +145,7 @@ export const generate = (data, core) => {
           getLogger()("Setting FN");
           endpoint.layerRef.setStyle(endpoint.styleFunction);
         }
+        
         // var rend = (meta && meta.drawingInfo ? meta.drawingInfo.renderer : {}) || {} ;
         // if(!rend)
         // {
@@ -248,6 +250,37 @@ export const generate = (data, core) => {
       style: endpoint.styleFunction
     });
     lyr.set('id', data.key);
+
+    lyr.getLegend = async () => {
+      if(endpoint.legend)
+        return endpoint.legend;
+      try
+        {
+
+          let meta = await (await fetch(endpoint.url + "?f=json")).json();
+          let styles = readEsriStyleDefinitions(meta.drawingInfo);
+          endpoint.legend = styles.featureStyles.map(entry => {
+
+            let val = {
+              label: entry.title,
+            }
+            
+            if(entry.fill && entry.fill.color)
+            {
+              val.color = entry.fill.color;
+            }
+
+            return val;
+          })
+        }
+        catch(ex)
+        {
+          debugger;
+          getLogger()("Exception", ex);
+        }
+
+      return endpoint.legend;
+    }
 
     source.applyFilters =
       function (ls) {

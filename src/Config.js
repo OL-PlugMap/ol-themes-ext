@@ -4,35 +4,50 @@ export function isConfig(config) {
 
 export function convertLayer(oldValue) {
 
-    let newValue = {
-        key: "",
-        name: "",
-        opacity: 1,
-        config: {},
-    }
+    let newValue = { ...oldValue };
+    
+    newValue.key = ""
+    newValue.name = "",
+    newValue.opacity = 1;
+    newValue.config = {};
+    
 
     let targetKey = undefined;
 
-    if(oldValue.xyz)
+    if(oldValue.xyz) {
         targetKey = "xyz";
+        delete newValue.xyz;
+    }
 
-    if(oldValue.esriFeature)
+    if(oldValue.esriFeature) {
         targetKey = "esriFeature";
+        delete newValue.esriFeature;
+    }
 
-    if(oldValue.esriExport)
+    if(oldValue.esriExport) {
         targetKey = "esriExport";
+        delete newValue.esriExport;
+    }
 
-    if(oldValue.mvt)
+    if(oldValue.mvt) {
         targetKey = "mvt";
+        delete newValue.mvt;
+    }
         
-    if(oldValue.staticVector)
+    if(oldValue.staticVector) {
         targetKey = "staticVector";
+        delete newValue.staticVector;
+    }
 
-    if(oldValue.wms)
+    if(oldValue.wms) {
         targetKey = "wms";
+        delete newValue.wms;
+    }
 
-    if(oldValue.wmts)
+    if(oldValue.wmts) {
         targetKey = "wmts";
+        delete newValue.wmts;
+    }
     
     if(!targetKey)
     {

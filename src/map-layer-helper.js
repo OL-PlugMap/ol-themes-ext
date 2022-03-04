@@ -636,6 +636,15 @@ export default class Themes {
       }
     }
 
+    if(layerConfig.legend?.enabled && layerConfig.legend?.items && layerConfig.legend?.items.length > 0)
+    {
+      layer.getLegend = async function() {
+        return layerConfig.legend.items;
+      }
+    }
+
+    layer.config = layerConfig;
+
     return layer;
   }
 

@@ -1,33 +1,14 @@
 import { Group as LayerGroup, Tile as TileLayer } from "ol/layer.js";
 import XYZ from "ol/source/XYZ";
-import { get } from "ol/proj";
-import { getWidth } from "ol/extent";
-import WMTS from "ol/source/WMTS";
-import WMTSTileGrid from "ol/tilegrid/WMTS";
-import ImageWMS from 'ol/source/ImageWMS.js';
-import ImageLayer from "ol/layer/Image";
-import { ImageArcGISRest, TileArcGISRest } from "ol/source";
-import TileGrid from "ol/tilegrid/TileGrid"
-
-import VectorLayer from 'ol/layer/Vector';
-import VectorSource from 'ol/source/Vector';
-
-import {tile as tileStrategy} from 'ol/loadingstrategy';
-import {createXYZ} from 'ol/tilegrid';
-
-
-import { Fill, Stroke, Style, CircleStyle } from 'ol/style';
-import { applyStyle } from 'ol-mapbox-style';
-import EsriJSON from 'ol/format/EsriJSON';
 
 import * as mvt from './mvt'
 import * as esriExport from './esriExport'
 import * as esriFeature from './esriFeature'
 import * as staticVector from './staticVector'
+import * as wms from './wms'
+import * as wmts from './wmts'
 
 import {getLogger} from './logger'
-
-const esrijsonFormat = new EsriJSON();
 
 const mapboxBaseUrl = 'https://api.mapbox.com';
 
@@ -694,161 +675,11 @@ export default class Themes {
           return this.groupLayers(layerConfig, layers);
 
         case "wmts":
-          var projection = get("EPSG:3857"),
-            projectionExtent = projection.getExtent(),
-            size = getWidth(projectionExtent) / 256,
-            zooms = 15 + 1,
-            resolutions = new Array(zooms),
-            matrixIds = new Array(zooms);
-          for (let z = 0; z < zooms; ++z) {
-            resolutions[z] = size / Math.pow(2, z);
-            matrixIds[z] = z;
-          }
-
-          layers = layerConfig.config.value.endpoints.map(endpoint => {
-
-            let errors = [];
-            if(!endpoint.url || endpoint.url.indexOf("{TileMatrixSet}") == -1)
-            {
-              errors.push("Missing \"{TileMatrixSet}\" in WMTS endpoint");
-            }
-            if(!endpoint.url || endpoint.url.indexOf("{TileMatrix}") == -1)
-            {
-              errors.push("Missing \"{TileMatrix}\" in WMTS endpoint");
-            }
-            if(!endpoint.url || endpoint.url.indexOf("{TileRow}") == -1)
-            {
-              errors.push("Missing \"{TileRow}\" in WMTS endpoint");
-            }
-            if(!endpoint.url || endpoint.url.indexOf("{TileCol}") == -1)
-            {
-              errors.push("Missing \"{TileCol}\" in WMTS endpoint");
-            }
-            if(errors.length > 0)
-            {
-              console.error("Errors in WMTS endpoint", errors);
-            }
-
-            let source = new WMTS({
-              crossOrigin: 'anonymous',
-              matrixSet: 'webmercator',
-              format: 'image/png',
-              projection: projection,
-              requestEncoding: 'REST',
-              tileGrid: new WMTSTileGrid({
-                extent: layerConfig.config.value.extent,
-                resolutions: resolutions,
-                matrixIds: matrixIds
-              }),
-              style: 'default',
-              opaque: false,
-              transparent: true,
-              url: endpoint.url
-            });
-            let configureSource = function (tokenKey) {
-              if (core.services && core.services[tokenKey]) {
-                let tokenData = core.services[tokenKey];
-                source.setUrl(`${tokenData.baseUrl || ""}${endpoint.url}`);
-                source.setTileLoadFunction(function (imageTile, src) {
-                  imageTile.getImage().src = `${src}?token=${tokenData.token || ""}`;
-                });
-              }
-            }
-
-            if (endpoint.tokenKey) {
-              // if the token data has already been fetched and stored in core.services
-              // go ahead and configure the source w/ the data, otherwise, postpone
-              // the configuration until `setServicesCmd` has been triggered
-              if (core.services && core.services[endpoint.tokenKey]) {
-                configureSource(endpoint.tokenKey);
-              } else {
-                self.pendingConfiguration.push({
-                  name: layerConfig.key,
-                  fn: configureSource,
-                  params: [endpoint.tokenKey]
-                });
-              }
-            }
-
-            let lyr = new TileLayer({
-              visible: false,
-              preload: 4,
-              zIndex: endpoint.zIndex || 0,
-              opacity: isNaN(layerConfig.opacity) || layerConfig.opacity == null ? 1 : layerConfig.opacity,
-              source: source,
-              opaque: false
-            });
-            lyr.set('id', layerConfig.key);
-            lyr.set('name', layerConfig.name);
-            return lyr;
-          });
-
+          layers = wmts.generate(layerConfig, core);
           return this.groupLayers(layerConfig, layers);
 
         case "wms":
-          var projection = proj.get("EPSG:3857"),
-            projectionExtent = projection.getExtent(),
-            size = getWidth(projectionExtent) / 256,
-            zooms = 15 + 1,
-            resolutions = new Array(zooms);
-          for (let z = 0; z < zooms; ++z) {
-            resolutions[z] = size / Math.pow(2, z);
-          }
-
-          layers = layerConfig.config.value.endpoints.map(endpoint => {
-            //The random adds a random value to the parameter
-            //essentially cache busting
-            let customParams = {
-              get random() {
-                return Math.random();
-              }
-            };
-
-            let source = new ImageWMS({
-              params: { 'LAYERS': 'geonode:shapes' },
-              ratio: 1,
-              serverType: 'geoserver',
-              resolutions: resolutions,
-              projection: projection,
-              url: endpoint.url
-            });
-
-            let configureSource = function (tokenKey) {
-              if (core.services && core.services[tokenKey]) {
-                let tokenData = core.services[tokenKey];
-                source.setUrl(`${tokenData.baseUrl || ""}${endpoint.url}`);
-                if (tokenData.token) {
-                  customParams["token"] = tokenData.token;
-                }
-                source.params_ = customParams;
-              }
-            }
-
-            if (endpoint.tokenKey) {
-              // if the token data has already been fetched and stored in core.services
-              // go ahead and configure the source w/ the data, otherwise, postpone
-              // the configuration until `setServicesCmd` has been triggered
-              if (core.services && core.services[endpoint.tokenKey]) {
-                configureSource(endpoint.tokenKey);
-              } else {
-                self.pendingConfiguration.push({
-                  name: layerConfig.key,
-                  fn: configureSource,
-                  params: [endpoint.tokenKey]
-                });
-              }
-            }
-
-            let lyr = new ImageLayer({
-              zIndex: endpoint.zIndex || 0,
-              extent: layerConfig.config.value.extent,
-              source: source
-            });
-            lyr.set('id', layerConfig.key);
-            lyr.set('name', layerConfig.name);
-            return lyr;
-          })
-
+          layers = wms.generate(layerConfig, core);
           return this.groupLayers(layerConfig, layers);
 
         case "esrimapservice":

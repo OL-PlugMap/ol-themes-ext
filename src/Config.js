@@ -5,7 +5,7 @@ export function isConfig(config) {
 export function convertLayer(oldValue) {
 
     let newValue = { ...oldValue };
-    
+
     newValue.key = ""
     newValue.name = "",
     newValue.opacity = 1;
@@ -82,6 +82,16 @@ export function convertLayer(oldValue) {
     else if (targetKey === "wms" || targetKey === "wmts")
     {
         newValue.config.value.extent = oldValue[targetKey].extent;
+        newValue.config.value.endpoints = newValue.config.value.endpoints.map(endpoint => {
+            if(endpoint.layers !== undefined) {
+                let layers = endpoint.layers;
+                if(!Array.isArray(layers))
+                    layers = [layers];
+
+                return { ...endpoint, layers };
+            }
+            return endpoint;
+        }); 
     }
 
 

@@ -99,7 +99,7 @@ export default class ol_themes_ext {
         else if(targetOpacity > 1)
             targetOpacity = 1;
         
-        return targetOpacity;
+        return targetOpacity;   
     }
 
     crossfadeStep(category, deltaTime) {
@@ -112,20 +112,32 @@ export default class ol_themes_ext {
 
         getLogger("Target opacity", targetOpacity, "Current opacity", curentOpacity, "Opacity per step", opacityPerStep);
         
+        if(targetOpacity > 1)
+            targetOpacity = 1;
+        else if(targetOpacity < 0)
+            targetOpacity = 0;
+
         if(targetOpacity == curentOpacity)
             return false;
 
-        let delta = (targetOpacity - curentOpacity);
+        let delta = Math.abs(targetOpacity - curentOpacity);
+
+        let direction = 1;
+
+        if(targetOpacity < curentOpacity)
+            direction = -1;
 
         let stepOpacity = curentOpacity;
 
-        if(Math.abs(delta) < 0.01)
+        if(delta < 0.01)
         {
             stepOpacity = targetOpacity;
         }
         else
         {
-            stepOpacity += ( deltaTime / ( crossfadeConfig.duration * 1000 ) ) * (delta < 0 ? -1 : 1) * opacityPerStep;
+            let durationMilliseconds = crossfadeConfig.duration * 1000;
+            let fractionOfDuration = deltaTime / durationMilliseconds;
+            stepOpacity += fractionOfDuration * opacityPerStep * direction;
         }
 
         if(stepOpacity < 0)
@@ -134,7 +146,7 @@ export default class ol_themes_ext {
             stepOpacity = 1;
 
 
-            getLogger("Step opacity", stepOpacity);
+        getLogger("Step opacity", stepOpacity);
 
         this.getCategoryByKey(category.category_key).getLayerByKey(crossfadeConfig.to).setOpacity(stepOpacity);
         this.getCategoryByKey(category.category_key).getLayerByKey(crossfadeConfig.to).setVisible(stepOpacity > 0);
@@ -162,6 +174,20 @@ export default class ol_themes_ext {
         config.forEach(category => {
             if(category.crossfade) {
                 this.crossfadeHooks.push(category);
+                let curZoom = this.map.getView().getZoom();
+                
+                // We need to do a couple of init checks to prevent fading when started
+                // If we are zoomed in past the start zoom, then we need to set the opacity of the to layer to 0
+                if(category.crossfade.startZoom > curZoom)
+                {
+                    this.getCategoryByKey(category.category_key).getLayerByKey(category.crossfade.to).setOpacity(0);
+                }
+
+                // If we are zoomed in past the end zoom, then we need to set the opacity of the from layer to 0
+                if(category.crossfade.endZoom < curZoom)
+                {
+                    this.getCategoryByKey(category.category_key).getLayerByKey(category.crossfade.from).setOpacity(0);
+                }
             }
         });
 

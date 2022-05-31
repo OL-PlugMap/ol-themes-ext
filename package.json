@@ -1,6 +1,6 @@
 {
   "name": "ol-themes-ext",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "Extension for openlayers that adds configuration driven map layers (aka themes)",
   "main": "dist/api.js",
   "files": [
@@ -28,23 +28,23 @@
   },
   "homepage": "https://github.com/OL-PlugMap/ol-themes-ext#readme",
   "dependencies": {
-    "ol-esri-style": "^2.0.9",
-    "ol-ext": "^3.2.4"
+    "ol-esri-style": "^2.0.10",
+    "ol-ext": "^3.2.24"
   },
   "devDependencies": {
-    "@babel/core": "^7.17.0",
-    "@babel/eslint-parser": "^7.17.0",
-    "@babel/preset-env": "^7.16.11",
-    "babel-loader": "^8.2.3",
+    "@babel/core": "^7.18.2",
+    "@babel/eslint-parser": "^7.18.2",
+    "@babel/preset-env": "^7.18.2",
+    "babel-loader": "^8.2.5",
     "babel-plugin-transform-class-properties": "^6.24.1",
-    "chalk": "^4.1.0",
+    "chalk": "^4.1.2",
     "copy-webpack-plugin": "^8.1.1",
     "fs-extra": "^9.1.0",
-    "node-fetch": "^3.2.0",
-    "ol": "^6.12.0",
+    "node-fetch": "^3.2.4",
+    "ol": "^6.14.1",
     "promise": "^8.1.0",
     "react-dev-utils": "^11.0.4",
-    "webpack": "^5.28.0",
+    "webpack": "^5.72.1",
     "webpack-manifest-plugin": "^3.2.0"
   },
   "babel": {

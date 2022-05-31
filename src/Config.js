@@ -44,6 +44,11 @@ export function convertLayer(oldValue) {
         delete newValue.wms;
     }
 
+    if(oldValue.wfs) {
+        targetKey = "wfs";
+        delete newValue.wfs;
+    }
+
     if(oldValue.wmts) {
         targetKey = "wmts";
         delete newValue.wmts;
@@ -51,6 +56,7 @@ export function convertLayer(oldValue) {
     
     if(!targetKey)
     {
+        debugger;
         console.error("Encountered an unknown config for layer", oldValue);
         return undefined;
     }
@@ -126,8 +132,10 @@ export function convertConfig(config) {
             {
                 layerMap[layer.key] = layer;
             }
-            else
+            else {
+                debugger;
                 console.error("Failed to convert layer! Not adding to map")
+            }
         }
 
         for(var group of config.layerGroups)
@@ -172,8 +180,8 @@ export function convertConfig(config) {
                 groups: [],
                 layers: [],
                 selection: {
-                    selection_type: category.selectiveness,
-                    selection_keys: category.defaultSelection
+                    selection_type: category.selectiveness || 'polyselective',
+                    selection_keys: category.defaultSelection || []
                 },
                 opacity: !isNaN(category.opacity) ? category.opacity : !isNaN(category.transparency) ? category.transparency : 1,
                 crossfade: processCrossfade(category.crossfade)
@@ -181,8 +189,16 @@ export function convertConfig(config) {
 
             if(!category.layerGroups)
             {
-                console.warn("Provided layer groups is not valid. Defaulting to an empty list.", category);
-                category.layerGroups = [];
+                if(category.groups)
+                {
+                    category.layerGroups = category.groups;
+                }
+                else
+                {
+                    debugger;
+                    console.warn("Provided layer groups is not valid. Defaulting to an empty list.", category);
+                    category.layerGroups = [];
+                }
             }
 
             for(let grpKey of category.layerGroups)

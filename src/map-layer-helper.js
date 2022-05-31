@@ -7,8 +7,9 @@ import * as esriFeature from './esriFeature'
 import * as staticVector from './staticVector'
 import * as wms from './wms'
 import * as wmts from './wmts'
+import * as wfs from './wfs'
 
-import {getLogger} from './logger'
+import { getLogger } from './logger'
 
 const mapboxBaseUrl = 'https://api.mapbox.com';
 
@@ -34,7 +35,7 @@ export function getMapboxPath(url) {
  * @private
  */
 export function normalizeSpriteUrl(url, token, baseUrl) {
-  if(url.startsWith(".."))
+  if (url.startsWith(".."))
     return baseUrl + "/" + url;
   const mapboxPath = getMapboxPath(url);
   if (!mapboxPath) {
@@ -57,7 +58,7 @@ export function normalizeSpriteUrl(url, token, baseUrl) {
  * @private
  */
 export function normalizeGlyphsUrl(url, token, baseUrl) {
-  if(url.startsWith(".."))
+  if (url.startsWith(".."))
     return baseUrl + "/" + url;
   const mapboxPath = getMapboxPath(url);
   if (!mapboxPath) {
@@ -80,7 +81,7 @@ export function normalizeGlyphsUrl(url, token, baseUrl) {
  * @private
  */
 export function normalizeStyleUrl(url, token, baseUrl) {
-  if(url.startsWith(".."))
+  if (url.startsWith(".."))
     return baseUrl + "/" + url;
   const mapboxPath = getMapboxPath(url);
   if (!mapboxPath) {
@@ -103,7 +104,7 @@ export function normalizeStyleUrl(url, token, baseUrl) {
  * @private
  */
 export function normalizeSourceUrl(url, token, baseUrl) {
-  if(url.startsWith(".."))
+  if (url.startsWith(".."))
     return baseUrl + "/" + url;
   const mapboxPath = getMapboxPath(url);
   if (!mapboxPath) {
@@ -175,8 +176,8 @@ export default class Themes {
     groupGroup.layers = layers;
 
     let oldSetOpacity = groupGroup.setOpacity;
-    groupGroup.setOpacity = function(opacity) {
-      if(oldSetOpacity)
+    groupGroup.setOpacity = function (opacity) {
+      if (oldSetOpacity)
         oldSetOpacity.call(groupGroup, opacity);
       else
         this.getLayers().getArray().forEach(layer => {
@@ -187,8 +188,8 @@ export default class Themes {
     };
 
     let oldSetVisibility = groupGroup.setVisibility;
-    groupGroup.setVisible = function(visible) {
-      if(oldSetVisibility)
+    groupGroup.setVisible = function (visible) {
+      if (oldSetVisibility)
         oldSetVisibility.call(groupGroup, visible);
       else
         this.getLayers().getArray().forEach(layer => {
@@ -196,12 +197,12 @@ export default class Themes {
         });
     };
 
-    groupGroup.getLayerByKey = function(key) {
+    groupGroup.getLayerByKey = function (key) {
       let matchingLayers = groupGroup.getLayers().getArray().filter(layer => {
         return layer.metadata ? layer.metadata.key === key : layer.key === key;
       });
 
-      if(matchingLayers)
+      if (matchingLayers)
         return matchingLayers[0];
     };
 
@@ -218,14 +219,13 @@ export default class Themes {
     if (isMono && !select.selection_key && Array.isArray(select.selection_keys)) {
       select.selection_key = select.selection_keys[select.selection_keys.length - 1];
     }
-    let selectionKeys = select.selection_key ? [ select.selection_key ] : select.selection_keys;
+    let selectionKeys = select.selection_key ? [select.selection_key] : select.selection_keys;
 
     let layers = [];
-    if(category.layers)
-    {
+    if (category.layers) {
       layers = category.layers.map(layer => {
         let lyr = this.makeLayer(layer);
-        if(selectionKeys.includes(layer.key))
+        if (selectionKeys.includes(layer.key))
           lyr.setVisible(true);
 
         return lyr;
@@ -242,15 +242,16 @@ export default class Themes {
       layers: layers
     });
     categoryGroup.metadata =
-      { key : category.category_key,
-        name: category.category_name
-      };
-      categoryGroup.set('id', category.category_key);
-      categoryGroup.set('selection_type', select.selection_type)
-      categoryGroup.set('selection_keys', selectionKeys)
-      categoryGroup.selectLayer = this.selectLayer(categoryGroup)
-      categoryGroup.deselectLayer = this.deselectLayer(categoryGroup)
-      categoryGroup.getLayerByKey = this.getLayerByKey(categoryGroup);
+    {
+      key: category.category_key,
+      name: category.category_name
+    };
+    categoryGroup.set('id', category.category_key);
+    categoryGroup.set('selection_type', select.selection_type)
+    categoryGroup.set('selection_keys', selectionKeys)
+    categoryGroup.selectLayer = this.selectLayer(categoryGroup)
+    categoryGroup.deselectLayer = this.deselectLayer(categoryGroup)
+    categoryGroup.getLayerByKey = this.getLayerByKey(categoryGroup);
 
     // This is the new metadata for the category
 
@@ -260,36 +261,35 @@ export default class Themes {
     categoryGroup.transparency = categoryGroup.getOpacity();
 
     let oldSetOpacity = categoryGroup.setOpacity;
-    categoryGroup.setOpacity = function(opacity) {
+    categoryGroup.setOpacity = function (opacity) {
       oldSetOpacity.call(categoryGroup, opacity);
       categoryGroup.transparency = opacity;
     }
     categoryGroup.setTransparancy = categoryGroup.setOpacity;
     categoryGroup.type = "category";
 
-    categoryGroup.getSelectionType = function() {
+    categoryGroup.getSelectionType = function () {
       return select.selection_type;
     }
 
-    categoryGroup.getSelectionKeys = function() {
+    categoryGroup.getSelectionKeys = function () {
       return categoryGroup.get('selection_keys');
     }
 
-    categoryGroup.isMonoSelective = function() {
+    categoryGroup.isMonoSelective = function () {
       return categoryGroup.get('selection_type') === 'monoselective' || categoryGroup.get('selection_type') === 'monoselection';
     }
 
-    categoryGroup.isMultiphasic = function() {
+    categoryGroup.isMultiphasic = function () {
       return category.multiphasic === true || category.canChangeOpacity === true;
     }
 
-    categoryGroup.canChangeOpacity = function() {
+    categoryGroup.canChangeOpacity = function () {
       return category.multiphasic === true || category.canChangeOpacity === true;
     }
 
     /* TODO Set Groups */
-    if(category.groups && category.groups.length > 0)
-    {
+    if (category.groups && category.groups.length > 0) {
       categoryGroup.groups = category.groups.map(group => {
         return this.makeGroup(group, layers);
       });
@@ -321,14 +321,13 @@ export default class Themes {
   getLayerByKey(category) {
     return (key) => {
       let matchingLayers = category.getLayers().getArray().filter(layer => {
-        if(!layer.metadata)
-        {  
+        if (!layer.metadata) {
           getLogger()("FIX ME", layer);
           return false;
         }
         return layer.metadata.key === key;
       });
-      if(matchingLayers)
+      if (matchingLayers)
         return matchingLayers[0];
     }
   }
@@ -344,14 +343,13 @@ export default class Themes {
   }
 
   selectLayer(category) {
-    return function(layerToSelect) {
-      if(typeof layerToSelect == "string")
-      {
+    return function (layerToSelect) {
+      if (typeof layerToSelect == "string") {
         var lyrs = category.getLayers().getArray();
 
         var filt = lyrs.filter(a => a.get('id') == layerToSelect)
 
-        if(filt && filt.length)
+        if (filt && filt.length)
           layerToSelect = filt[0];
         else
           console.log("Couldnt find layer by id", layerToSelect);
@@ -361,22 +359,19 @@ export default class Themes {
       let selectionKeys = category.get('selection_keys');
       let targetKey = layerToSelect.get('id');
 
-      switch(selectionType)
-      {
+      switch (selectionType) {
         case 'monoselection':
         case 'monoselective':
-            category.getLayers().forEach(layer =>
-              {
-                //toggleLayer(layer, targetKey === layer.get('id'))
-                layer.setVisible(false);
-              });
-              layerToSelect.setVisible(true);
-              selectionKeys = [ targetKey ];
+          category.getLayers().forEach(layer => {
+            //toggleLayer(layer, targetKey === layer.get('id'))
+            layer.setVisible(false);
+          });
+          layerToSelect.setVisible(true);
+          selectionKeys = [targetKey];
           break;
         case 'polyselection':
         case 'polyselective':
-          if(!selectionKeys.includes(targetKey))
-          {
+          if (!selectionKeys.includes(targetKey)) {
             layerToSelect.setVisible(true);
             selectionKeys.push(targetKey);
           }
@@ -391,11 +386,10 @@ export default class Themes {
   }
 
   deselectLayer(category) {
-    return function(layerToSelect) {
-      if(typeof layerToSelect == "string")
-      {
+    return function (layerToSelect) {
+      if (typeof layerToSelect == "string") {
         var filt = category.getLayers().getArray().filter(a => a.get('id') == layerToSelect)
-        if(filt && filt.length)
+        if (filt && filt.length)
           layerToSelect = filt[0];
         else
           console.log("Couldnt find layer by id", layerToSelect);
@@ -405,20 +399,17 @@ export default class Themes {
       let selectionKeys = category.get('selection_keys');
       let targetKey = layerToSelect.get('id');
 
-      switch(selectionType)
-      {
+      switch (selectionType) {
         case 'monoselective':
         case 'monoselection':
-          if( selectionKeys.includes(targetKey))
-          {
-              layerToSelect.setVisible(false);
-              selectionKeys = selectionKeys.filter(a => a != targetKey);
+          if (selectionKeys.includes(targetKey)) {
+            layerToSelect.setVisible(false);
+            selectionKeys = selectionKeys.filter(a => a != targetKey);
           }
           break;
         case 'polyselective':
         case 'polyselection':
-          if(selectionKeys.includes(targetKey))
-          {
+          if (selectionKeys.includes(targetKey)) {
             layerToSelect.setVisible(false);
             selectionKeys = selectionKeys.filter(a => a != targetKey);
           }
@@ -459,7 +450,7 @@ export default class Themes {
       //   layer.setVisible(isMatch);
       //   layer.getLayers().getArray().forEach(child => child.setVisible(isMatch));
       // } else {
-        layer.setVisible(isMatch);
+      layer.setVisible(isMatch);
       //}
     };
 
@@ -490,7 +481,7 @@ export default class Themes {
         .getArray()
         .find(l => l.get('id') === data.category_key);
     if (category) {
-      if(isNaN(data.transparency) || data.transparency == null)
+      if (isNaN(data.transparency) || data.transparency == null)
         data.transparency = 1;
       category.setOpacity(data.transparency);
     }
@@ -503,15 +494,16 @@ export default class Themes {
       group.set('id', layerConfig.key);
       window.layerMap[layerConfig.key] = group;
       group.metadata =
-        { key : layerConfig.key,
-          name: layerConfig.name,
-          isGroup: true
-        };
+      {
+        key: layerConfig.key,
+        name: layerConfig.name,
+        isGroup: true
+      };
 
       let oldVis = group.setVisible;
       let oldOpac = group.setOpacity;
 
-      group.setVisible = function(vis) {
+      group.setVisible = function (vis) {
         getLogger()("Setting visibility of group", vis, this);
         oldVis.call(group, vis);
         this.getLayers().getArray().forEach(layer => {
@@ -519,7 +511,7 @@ export default class Themes {
         });
       };
 
-      group.setOpacity = function(opac) {
+      group.setOpacity = function (opac) {
         getLogger()("Setting opacity on group", opac, this);
         oldOpac.call(group, opac);
         this.getLayers().getArray().forEach(layer => {
@@ -527,32 +519,27 @@ export default class Themes {
         });
       };
 
-      if(layers[0].getFeaturesInView)
-      {
+      if (layers[0].getFeaturesInView) {
         group.getFeaturesInView = layers[0].getFeaturesInView;
       }
 
-      if(layers[0].getFeaturesUnderPixel)
-      {
+      if (layers[0].getFeaturesUnderPixel) {
         group.getFeaturesUnderPixel = layers[0].getFeaturesUnderPixel;
       }
 
-      if(layers[0].getLegend)
-      {
+      if (layers[0].getLegend) {
         group.getLegend = layers[0].getLegend;
       }
-      else
-      {
-        group.getLegend = async function() {
-          return [{value:"Not Implemented"}];
+      else {
+        group.getLegend = async function () {
+          return [{ value: "Not Implemented" }];
         }
       }
 
 
       let highlightLayers = layers.filter(l => l.highlight ? true : false);
-      
-      if(highlightLayers.length > 0)
-      {
+
+      if (highlightLayers.length > 0) {
         group.highlight = (item) => {
           highlightLayers.forEach((layer) => {
             console.log("Calling highlight on layer", layer)
@@ -562,20 +549,18 @@ export default class Themes {
       }
 
       let unhighlightLayers = layers.filter(l => l.unhighlight ? true : false);
-      
-      if(unhighlightLayers.length > 0)
-      {
+
+      if (unhighlightLayers.length > 0) {
         group.unhighlight = (item) => {
           unhighlightLayers.forEach((layer) => {
             layer.unhighlight(item);
           });
         }
       }
-      
+
       let unhighlightAllLayers = layers.filter(l => l.unhighlightAll ? true : false);
-      
-      if(unhighlightAllLayers.length > 0)
-      {
+
+      if (unhighlightAllLayers.length > 0) {
         group.unhighlightAll = () => {
           unhighlightAllLayers.forEach((layer) => {
             layer.unhighlightAll();
@@ -589,7 +574,7 @@ export default class Themes {
     } else if (layers.length === 1) {
       layers[0].set('id', layerConfig.key);
       window.layerMap[layerConfig.key] = layers[0];
-      
+
       layers[0] = this.applyLayerMetadataFromConfig(layers[0], layerConfig);
 
       return layers[0];
@@ -600,7 +585,7 @@ export default class Themes {
 
   applyLayerMetadataFromConfig(layer, layerConfig) {
     layer.metadata = layer.metadata || {};
-    
+
     layer.metadata.key = layerConfig.key;
     layer.key = layerConfig.key;
 
@@ -610,16 +595,14 @@ export default class Themes {
     layer.metadata.type = "layer";
     layer.type = "layer";
 
-    if(!layer.getLegend)
-    {
-      layer.getLegend = async function() {
-        return [{value:"Not Implemented"}];
+    if (!layer.getLegend) {
+      layer.getLegend = async function () {
+        return [{ value: "Not Implemented" }];
       }
     }
 
-    if(layerConfig.legend?.enabled && layerConfig.legend?.items && layerConfig.legend?.items.length > 0)
-    {
-      layer.getLegend = async function() {
+    if (layerConfig.legend?.enabled && layerConfig.legend?.items && layerConfig.legend?.items.length > 0) {
+      layer.getLegend = async function () {
         return layerConfig.legend.items;
       }
     }
@@ -682,15 +665,19 @@ export default class Themes {
           layers = wms.generate(layerConfig, core);
           return this.groupLayers(layerConfig, layers);
 
+        case "wfs":
+          layers = wfs.generate(layerConfig, core);
+          return this.groupLayers(layerConfig, layers);
+
         case "esrimapservice":
         case "esriexport":
-          layers = esriExport.generate(layerConfig,core);
+          layers = esriExport.generate(layerConfig, core);
           return this.groupLayers(layerConfig, layers);
 
         case "esrifeatureservice":
         case "esrifeature":
-            layers = esriFeature.generate(layerConfig, core);
-            return this.groupLayers(layerConfig, layers);
+          layers = esriFeature.generate(layerConfig, core);
+          return this.groupLayers(layerConfig, layers);
 
         default:
           throw new Error(`Layer type '${layerConfig.config.type}' has not been implemented.`);

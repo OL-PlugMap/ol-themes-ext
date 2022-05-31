@@ -149,6 +149,7 @@ export const generate = (layerConfig, core) => {
         let lyr = new VectorLayer({
             visible: false,
             source: source,
+            zIndex: endpoint.zIndex || 1000,
             style: (feature) => {
                 //console.log(feature)
                 return new Style({

@@ -126,6 +126,15 @@ export const generate = (layerConfig, core) => {
             }
         }
 
+        let layerToShow = endpoint.layerToShow;
+        if (layerToShow) {
+            //Convert it to a query param
+            //Replace any spaces with %20
+            layerToShow = layerToShow.replace(/ /g, "%20");
+            //Replace any , with %2C
+            layerToShow = layerToShow.replace(/,/g, "%2C");
+        }
+
         let source = new VectorSource({
             format: new GeoJSON(),
             url: function(extent) {
@@ -133,7 +142,7 @@ export const generate = (layerConfig, core) => {
                 endpoint.url +
                 "?service=wfs&version=1.1.0&request=GetFeature" + //Call to getFeture
                 "&outputFormat=application/json&srsname=EPSG:3857" + //Ask for JSON Output in web mercator
-                (endpoint.layerToShow ? "&typename=" + endpoint.layerToShow : "") + //If the layers to show is set (AKA the object type append it to the query)
+                (layerToShow ? "&typename=" + layerToShow : "") + //If the layers to show is set (AKA the object type append it to the query)
                 "&bbox=" + //Pass in the tile bbox
                 extent.join(",") +
                 ",EPSG:3857" //Tell it that the BBOX is web mercator

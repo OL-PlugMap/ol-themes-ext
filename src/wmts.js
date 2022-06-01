@@ -1,5 +1,5 @@
 import { get } from "ol/proj";
-import { getWidth } from "ol/extent";
+import { getTopLeft, getWidth } from "ol/extent";
 import { getLogger } from './logger'
 import { getSldLegend } from './sharedOGC'
 import WMTS from "ol/source/WMTS";
@@ -17,69 +17,62 @@ export const generate = (layerConfig, core) => {
         matrixIds = new Array(zooms);
     for (let z = 0; z < zooms; ++z) {
         resolutions[z] = size / Math.pow(2, z);
-        matrixIds[z] = z;
+        matrixIds[z] = "EPSG%3A3857%3A"+z;
     }
 
     let layers = layerConfig.config.value.endpoints.map(endpoint => {
 
         let errors = [];
+        if (!endpoint.url || endpoint.url.indexOf("?") == -1) {
+            endpoint.url += "?Service=WMTS&Request=GetTile&Version=1.0.0&Format=image/png";
+        }
         if (!endpoint.url || endpoint.url.indexOf("{TileMatrixSet}") == -1) {
+            endpoint.url += "&TileMatrixSet={TileMatrixSet}"
             errors.push("Missing \"{TileMatrixSet}\" in WMTS endpoint");
         }
         if (!endpoint.url || endpoint.url.indexOf("{TileMatrix}") == -1) {
+            endpoint.url += "&TileMatrix={TileMatrix}"
             errors.push("Missing \"{TileMatrix}\" in WMTS endpoint");
         }
         if (!endpoint.url || endpoint.url.indexOf("{TileRow}") == -1) {
+            endpoint.url += "&TileRow={TileRow}"
             errors.push("Missing \"{TileRow}\" in WMTS endpoint");
         }
         if (!endpoint.url || endpoint.url.indexOf("{TileCol}") == -1) {
+            endpoint.url += "&TileCol={TileCol}"
             errors.push("Missing \"{TileCol}\" in WMTS endpoint");
+        }
+        if (!endpoint.url || endpoint.url.indexOf("Layer") == -1) {
+            endpoint.url += "&Layer={Layer}"
+            errors.push("Missing \"{Layer}\" in WMTS endpoint");
         }
         if (errors.length > 0) {
             console.error("Errors in WMTS endpoint", errors);
         }
 
+        //Replace the {Layer} parameter with the layerToShow in the endpoint url
+        if (endpoint.layerToShow) {
+            endpoint.url = endpoint.url.replace("{Layer}", endpoint.layerToShow);
+        }
+
         let source = new WMTS({
             crossOrigin: 'anonymous',
-            matrixSet: 'webmercator',
+            matrixSet: 'EPSG%3A3857',
             format: 'image/png',
             projection: projection,
             requestEncoding: 'REST',
             tileGrid: new WMTSTileGrid({
                 extent: layerConfig.config.value.extent,
                 resolutions: resolutions,
-                matrixIds: matrixIds
+                matrixIds: matrixIds,
+                origin: getTopLeft(projectionExtent)
             }),
             style: 'default',
+            layer: endpoint.layerToShow,
             opaque: false,
             transparent: true,
             url: endpoint.url
         });
-        let configureSource = function (tokenKey) {
-            if (core.services && core.services[tokenKey]) {
-                let tokenData = core.services[tokenKey];
-                source.setUrl(`${tokenData.baseUrl || ""}${endpoint.url}`);
-                source.setTileLoadFunction(function (imageTile, src) {
-                    imageTile.getImage().src = `${src}?token=${tokenData.token || ""}`;
-                });
-            }
-        }
-
-        if (endpoint.tokenKey) {
-            // if the token data has already been fetched and stored in core.services
-            // go ahead and configure the source w/ the data, otherwise, postpone
-            // the configuration until `setServicesCmd` has been triggered
-            if (core.services && core.services[endpoint.tokenKey]) {
-                configureSource(endpoint.tokenKey);
-            } else {
-                self.pendingConfiguration.push({
-                    name: layerConfig.key,
-                    fn: configureSource,
-                    params: [endpoint.tokenKey]
-                });
-            }
-        }
-
         let lyr = new TileLayer({
             visible: false,
             preload: 4,

@@ -251,6 +251,7 @@ export default class Themes {
     categoryGroup.set('selection_keys', selectionKeys)
     categoryGroup.selectLayer = this.selectLayer(categoryGroup)
     categoryGroup.deselectLayer = this.deselectLayer(categoryGroup)
+    categoryGroup.deselectAll = this.deselectAll(categoryGroup)
     categoryGroup.getLayerByKey = this.getLayerByKey(categoryGroup);
 
     // This is the new metadata for the category
@@ -422,6 +423,16 @@ export default class Themes {
       category.set('selection_keys', selectionKeys);
     }
   }
+
+  deselectAll(category) {
+    return function () {
+      let selectionKeys = category.get('selection_keys');
+      for(let key of selectionKeys) {
+        category.deselectLayer(key);
+      }
+    }
+  }
+
 
   toggleSelectedThemes(data) {
     if (!data)

@@ -181,7 +181,7 @@ export function convertConfig(config) {
                 layers: [],
                 selection: {
                     selection_type: category.selectiveness || 'polyselective',
-                    selection_keys: category.defaultSelection || []
+                    selection_keys: [...category.defaultSelection] || []
                 },
                 opacity: !isNaN(category.opacity) ? category.opacity : !isNaN(category.transparency) ? category.transparency : 1,
                 crossfade: processCrossfade(category.crossfade)

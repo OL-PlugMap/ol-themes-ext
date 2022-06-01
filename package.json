@@ -1,6 +1,6 @@
 {
   "name": "ol-themes-ext",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "description": "Extension for openlayers that adds configuration driven map layers (aka themes)",
   "main": "dist/api.js",
   "files": [

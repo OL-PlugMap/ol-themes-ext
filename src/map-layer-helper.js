@@ -206,6 +206,8 @@ export default class Themes {
         return matchingLayers[0];
     };
 
+    groupGroup = this.applyGroupFunctions(groupGroup);
+
     return groupGroup;
   }
 
@@ -261,6 +263,23 @@ export default class Themes {
 
     categoryGroup.transparency = categoryGroup.getOpacity();
 
+    
+
+    /* TODO Set Groups */
+    if (category.groups && category.groups.length > 0) {
+      categoryGroup.groups = category.groups.map(group => {
+        return this.makeGroup(group, layers);
+      });
+    }
+
+    categoryGroup.config = category;
+
+    categoryGroup = this.applyCategoryFunctions(categoryGroup);
+
+    return categoryGroup;
+  }
+
+  applyCategoryFunctions(categoryGroup) {
     let oldSetOpacity = categoryGroup.setOpacity;
     categoryGroup.setOpacity = function (opacity) {
       oldSetOpacity.call(categoryGroup, opacity);
@@ -289,14 +308,41 @@ export default class Themes {
       return category.multiphasic === true || category.canChangeOpacity === true;
     }
 
-    /* TODO Set Groups */
-    if (category.groups && category.groups.length > 0) {
-      categoryGroup.groups = category.groups.map(group => {
-        return this.makeGroup(group, layers);
-      });
+    categoryGroup.getSelectedLayers = () => {
+      let selectedKeys = categoryGroup.getSelectionKeys();
+      let layers = categoryGroup.groups.map(group => group.layers).flat();
+      return layers.filter(layer => selectedKeys.includes(layer.key));
     }
 
-    categoryGroup.config = category;
+    categoryGroup.getFeaturesInView = async () => {
+      console.log("Getting features in view");
+      let selectedLayers = categoryGroup.getSelectedLayers();
+      let features = [];
+      let promises = selectedLayers.map(layer => {
+        return layer.getFeaturesInView();
+      });
+      let results = await Promise.all(promises);
+      results.forEach(result => {
+        features = features.concat(result);
+      });
+      console.log("Got features in view", features);
+      return features;
+    }
+
+    categoryGroup.getFeaturesUnderPixel = async (pixel, event) => {
+      console.log("Getting features under pixel");
+      let selectedLayers = categoryGroup.getSelectedLayers();
+      let features = [];
+      let promises = selectedLayers.map(layer => {
+        return layer.getFeaturesUnderPixel(pixel, event);
+      });
+      let results = await Promise.all(promises);
+      results.forEach(result => {
+        features = features.concat(result);
+      });
+      console.log("Got features under pixel", features);
+      return features;
+    }
 
     return categoryGroup;
   }
@@ -427,7 +473,7 @@ export default class Themes {
   deselectAll(category) {
     return function () {
       let selectionKeys = category.get('selection_keys');
-      for(let key of selectionKeys) {
+      for (let key of selectionKeys) {
         category.deselectLayer(key);
       }
     }
@@ -530,23 +576,6 @@ export default class Themes {
         });
       };
 
-      if (layers[0].getFeaturesInView) {
-        group.getFeaturesInView = layers[0].getFeaturesInView;
-      }
-
-      if (layers[0].getFeaturesUnderPixel) {
-        group.getFeaturesUnderPixel = layers[0].getFeaturesUnderPixel;
-      }
-
-      if (layers[0].getLegend) {
-        group.getLegend = layers[0].getLegend;
-      }
-      else {
-        group.getLegend = async function () {
-          return [{ value: "Not Implemented" }];
-        }
-      }
-
 
       let highlightLayers = layers.filter(l => l.highlight ? true : false);
 
@@ -580,6 +609,7 @@ export default class Themes {
       }
 
       group = this.applyLayerMetadataFromConfig(group, layerConfig);
+      group = this.applyGroupFunctions(group);
 
       return group;
     } else if (layers.length === 1) {
@@ -620,7 +650,102 @@ export default class Themes {
 
     layer.config = layerConfig;
 
+
+    let layers = layer.getLayers ? layer.getLayers().getArray() : [layer];
+    let group = layer;
+
     return layer;
+  }
+
+  applyGroupFunctions(group) {
+    let layers = group.getLayers().getArray();
+
+    let hasAGetFeaturesInView = false;
+    layers.forEach(layer => {
+      if (layer.getFeaturesInView) {
+        hasAGetFeaturesInView = true;
+      }
+    });
+
+    let hasAGetFeaturesUnderPixel = false;
+    layers.forEach(layer => {
+      if (layer.getFeaturesUnderPixel) {
+        hasAGetFeaturesUnderPixel = true;
+      }
+    });
+
+    let hasAGetLegend = false;
+    layers.forEach(layer => {
+      if (layer.getLegend) {
+        hasAGetLegend = true;
+      }
+    });
+
+    if (hasAGetFeaturesInView) {
+      group.getFeaturesInView = async () => {
+        console.log("Getting features in view for group", group);
+        let features = [];
+        let promises = [];
+
+        layers.forEach(async layer => {
+          if (layer.getFeaturesInView) {
+            promises.push(layer.getFeaturesInView());
+          }
+        });
+
+        let results = await Promise.all(promises);
+        results.forEach(result => {
+          features = features.concat(result);
+        });
+
+        console.log("Got features in view for group", group, features);
+        return features;
+      }
+    }
+
+    if (hasAGetFeaturesUnderPixel) {
+      group.getFeaturesUnderPixel = async (pixel, event) => {
+        let features = [];
+        let promises = [];
+
+        layers.forEach(async layer => {
+          if (layer.getFeaturesUnderPixel) {
+            console.log("Adding a promise for layer", layer);
+            promises.push(layer.getFeaturesUnderPixel(pixel, event));
+          }
+        });
+
+        await Promise.all(promises).then(results => {
+          results.forEach(result => {
+            features = features.concat(result);
+          });
+        });
+
+        console.log("Got features under pixel for group", group, features);
+        return features;
+      }
+    }
+
+
+
+    if (hasAGetLegend) {
+      group.getLegend = async () => {
+        let legends = [];
+        layers.forEach(async layer => {
+          if (layer.getLegend) {
+            legends = legends.concat(await layer.getLegend());
+          }
+        });
+        return legends;
+      }
+    }
+    else {
+      group.getLegend = async () => {
+        return [{ value: "Not Implemented" }];
+      }
+    }
+
+    return group;
   }
 
   makeLayer(layerConfig) {

@@ -12,7 +12,7 @@ const _getFeaturesInView = (layer, endpoint, map) => {
         if(endpoint.identify) {
             let ident = endpoint.identify;
             if(ident.wfs) {
-                debugger;
+                // Get the extent in which we are looking
                 let extent = map.getView().calculateExtent();
                 let projectionEPSG = map.getView().getProjection().getCode();
                 let wfsServiceUrl = ident.wfs.url;
@@ -26,7 +26,6 @@ const _getFeaturesInView = (layer, endpoint, map) => {
                 getLogger()("Got features", features);
                 return features;
             } else if (ident.wms) {
-                debugger;
                 let extent = map.getView().calculateExtent();
                 let projectionEPSG = map.getView().getProjection().getCode();
                 let wmsServiceUrl = ident.wms.url;
@@ -47,7 +46,6 @@ const _getFeaturesInView = (layer, endpoint, map) => {
 
 const _getFeaturesUnderPixel = (layer, endpoint, map) => {
     return async (pixel, event) => {
-        debugger;
         if(!pixel || !Array.isArray(pixel) || pixel.length != 2)
         {
           console.warn("Invalid parameter provided to getFeaturesUnderPixel. Expected an array with a length of 2. Got", pixel);
@@ -58,19 +56,19 @@ const _getFeaturesUnderPixel = (layer, endpoint, map) => {
         if(endpoint.identify) {
             let ident = endpoint.identify;
             if(ident.wfs) {
-                debugger;
                 let wfsServiceUrl = ident.wfs.url;
-                let featureType = endpoint.layerToShow;
+                let featureType = endpoint.layerToShow || ident.wfs.layer;
 
                 // Query the WFS to get the features that are in the extent
-                let queryUrl = wfsServiceUrl + "?service=WFS&version=1.1.0&request=GetFeature&outputFormat=application/json&srsname=EPSG:3857&bbox=" + (coords[0]-0.25) + "," + (coords[1]-0.25) + "," + (coords[0]+0.25) + "," + (coords[1]+0.25) + ",EPSG:3857" + "&maxFeatures=1000" + "&typeName=" + featureType;
+                let queryUrl = wfsServiceUrl + "?service=WFS&version=1.1.0&request=GetFeature&outputFormat=application/json&srsname=EPSG:3857&bbox=" + (coords[0]-0.25) + "," + (coords[1]-0.25) + "," + (coords[0]+0.25) + "," + (coords[1]+0.25) + ",EPSG:3857" + "&maxFeatures=1000";
+                if(featureType)
+                    queryUrl += "&typeName=" + featureType;
                 getLogger()("Querying WFS", queryUrl);
                 let response = await fetch(queryUrl);
                 let features = await response.json();
                 getLogger()("Got features", features);
                 return features;
             } else if (ident.wms) {
-                debugger;
                 let wmsServiceUrl = ident.wms.url;
                 let layerToShow = endpoint.layerToShow;
 
@@ -170,8 +168,6 @@ export const generate = (layerConfig, core) => {
             if (endpoint.legendEntries) {
                 return endpoint.legendEntries;
             }
-
-            debugger;
 
             if ((layerConfig.legend?.enabled && layerConfig.legend?.method === 'sld') || (endpoint.legend && endpoint.legend.method === 'sld')) {
                 endpoint.legendEntries = await getSldLegend(endpoint);

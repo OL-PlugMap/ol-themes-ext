@@ -2,10 +2,20 @@ import { get } from "ol/proj";
 import { getWidth } from "ol/extent";
 import ImageWMS from 'ol/source/ImageWMS.js';
 import ImageLayer from "ol/layer/Image";
-import {getLogger} from './logger'
-import {getSldLegend} from './sharedOGC'
+import { getLogger } from './logger'
+import { getSldLegend } from './sharedOGC'
 import ServerType from 'ol/source/WMSServerType'
 
+import * as identifyUtils from './identifyUtils'
+
+
+const _getFeaturesInView = (layer, endpoint, map) => {
+    return identifyUtils.getFeaturesInView(layer, endpoint, map);
+}
+
+const _getFeaturesUnderPixel = (layer, endpoint, map) => {
+    return identifyUtils.getFeaturesUnderPixel(layer, endpoint, map);
+}
 
 
 export const generate = (layerConfig, core) => {
@@ -27,7 +37,7 @@ export const generate = (layerConfig, core) => {
             }
         };
 
-        
+
         let serverType = ServerType.GEOSERVER;
         if (endpoint.serverType) {
             switch (endpoint.serverType.toLowerCase()) {
@@ -84,18 +94,23 @@ export const generate = (layerConfig, core) => {
 
 
         lyr.getLegend = async function () {
-            
+
             if (endpoint.legendEntries) {
-              return endpoint.legendEntries;
+                return endpoint.legendEntries;
             }
-      
-            if((layerConfig.legend?.enabled && layerConfig.legend?.method === 'sld') || (endpoint.legend && endpoint.legend.method === 'sld')) {
+
+            if ((layerConfig.legend?.enabled && layerConfig.legend?.method === 'sld') || (endpoint.legend && endpoint.legend.method === 'sld')) {
                 endpoint.legendEntries = await getSldLegend(endpoint);
             }
-            
-      
+
+
             return endpoint.legendEntries;
-          }
+        }
+
+
+        lyr.getFeaturesInView = _getFeaturesInView(lyr, endpoint, core.getMap())
+
+        lyr.getFeaturesUnderPixel = _getFeaturesUnderPixel(lyr, endpoint, core.getMap());
 
 
         return lyr;

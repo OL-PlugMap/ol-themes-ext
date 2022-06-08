@@ -64,8 +64,6 @@ export default class ol_themes_ext {
     }
 
     crossfade() {
-        getLogger("Crossfade");
-
         // If theres another crossfade running, stop it
         if(this.crossfadeTimeoutId) {
             clearTimeout(this.crossfadeTimeoutId);
@@ -205,19 +203,57 @@ export default class ol_themes_ext {
     }
 
     getCategoryByKey(key) {
+        if(!this.categories || this.categories.length == 0)
+        {
+            console.error("NO CATEGORIES ARE PRESENT IN OL-THEMES-EXT. HAVE YOU INITIALIZED?");
+            return;
+        }
+
         let matching = this.categories.filter(cat => {
-            return cat.metadata.key === key;
+            return cat.key === key;
         });
 
         if(matching)
             return matching[0];
     }
 
+    getLayerByKey(key) {
+        if(!this.categories || this.categories.length == 0)
+        {
+            console.error("NO CATEGORIES ARE PRESENT IN OL-THEMES-EXT. HAVE YOU INITIALIZED?");
+            return;
+        }
+
+        let layers = this.categories.map(c => c.groups).flat().map(g => g.layers).flat();
+        let matching = layers.filter(layer => {
+            return layer.key === key;
+        });
+
+        if(matching)
+            return matching[0];
+    }
+
+    getGroupByKey(key) {
+        if(!this.categories || this.categories.length == 0)
+        {
+            console.error("NO CATEGORIES ARE PRESENT IN OL-THEMES-EXT. HAVE YOU INITIALIZED?");
+            return;
+        }
+
+        let groups = this.categories.map(c => c.groups).flat();
+        let matching = groups.filter(group => {
+            return group.key === key;
+        });
+
+        if(matching)
+            return matching[0];
+    }
+
+
     getCategories() {
         return this.categories;
     }
-
-    
+   
 }
 
 export function extendWithThemes(map) {

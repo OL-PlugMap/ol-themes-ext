@@ -15,6 +15,7 @@ import { createXYZ } from "ol/tilegrid";
 import { Style, Fill, Stroke, Circle as CircleStyle, Text } from 'ol/style';
 
 
+// TODO: Move these to the identify utils
 let _getFeaturesInView = (vtLayer, map) => {
     return async () => {
       return getLoadingPromise(vtLayer).then(async () => {

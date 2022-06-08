@@ -347,54 +347,6 @@ let _refreshFunction = (source) =>
   };
 };
 
-let _loaderOld = (endpoint) => {
-  return function(tile, url) {
-    getLogger()("Loader", tile, url);
-    tile.setLoader(function(extent, resolution, projection) {
-      var fetchModel =
-        {
-          method: 'GET',
-          mode: 'cors',
-          headers: endpoint.headers
-        };
-      if(endpoint.nocache)
-      {
-        fetchModel.cache = 'no-cache';
-      }
-      
-      getLogger()("Fetching", url);
-      return fetch(url, fetchModel).then(function(response) {
-        
-        return response.arrayBuffer().then(function(data) {
-          try
-          {
-            const format = tile.getFormat()
-            const features = format.readFeatures(data, {
-              extent: extent,
-              featureProjection: projection
-            });
-            getLogger()("Got features", url, features);
-            tile.setFeatures(features);
-          }
-          catch(ex)
-          {
-            getLogger()("Unable to load tile", ex, tile, url);
-            tile.setFeatures([]);
-          }
-        })
-        .catch(ex => {
-          getLogger()("Unable to get AB for tile", ex, tile, url);
-          tile.setFeatures([]);
-        });
-      })
-      .catch(err => {
-        getLogger()("Error Fetching", err);
-        // In the event there is an error setting the status to error would be wise however, when a tile state is set to error the rest of the map starts doing weird things.
-        tile.setFeatures([]);
-      });
-    });
-  }
-};
 
 let _loader = (endpoint) => {
   return function(tile, url) {
@@ -494,7 +446,12 @@ let _deduplicateFeatures = (features) => {
   return ret;
 };
 
-let _getFeaturesInView = (vtLayer, map) => {
+let _getFeaturesInView = (vtLayer, endpoint, map) => {
+
+  if (endpoint.identify) {
+    return identifyUtils.getFeaturesInView(vtLayer, endpoint, map);
+  }
+
   return async () => {
     return getLoadingPromise(vtLayer).then(async () => {
       let features = vtLayer.getSource().getFeaturesInExtent(map.getView().calculateExtent());
@@ -528,7 +485,12 @@ let getLoadingPromise = (vtLayer) => {
   return promise;
 }
 
-let _getFeaturesUnderPixel = (vtLayer, map) => {
+let _getFeaturesUnderPixel = (vtLayer, endpoint, map) => {
+  
+  if(endpoint.identify) {
+    return identifyUtils.getFeaturesUnderPixel(vtLayer, endpoint, map);
+  }
+
   return async (pixel, event) => {
     if(!pixel || !Array.isArray(pixel) || pixel.length != 2)
     {
@@ -597,12 +559,6 @@ let _getFeaturesUnderPixel = (vtLayer, map) => {
   }
 };
 
-let _configureSource = (tokenKey) => {
-  if (core.services && core.services[tokenKey]) {
-    let tokenData = core.services[tokenKey];
-    source.setUrl(`${tokenData.baseUrl || ""}${endpoint.url}`);
-  }
-};
 
 //TODO: Make a function that, if tiles are loaded installs a promise
 //Change the below to check if the promise(s) exist
@@ -692,9 +648,9 @@ export const generate = (data, core) => {
 
         vtLayer.filterEngine = _filterEngine(source);
 
-        vtLayer.getFeaturesInView = _getFeaturesInView(vtLayer, core.getMap())
+        vtLayer.getFeaturesInView = _getFeaturesInView(vtLayer, endpoint, core.getMap())
 
-        vtLayer.getFeaturesUnderPixel = _getFeaturesUnderPixel(vtLayer, core.getMap());
+        vtLayer.getFeaturesUnderPixel = _getFeaturesUnderPixel(vtLayer, endpoint, core.getMap());
       
         vtLayer.on('postrender', handlePostRender(source, vtLayer));
         source.on('tileloadend', handlePostRender(source, vtLayer));

@@ -17,8 +17,21 @@ import { Style, Fill, Stroke, Circle as CircleStyle, Text } from 'ol/style';
 
 // TODO: Move these to the identify utils
 let _getFeaturesInView = (vtLayer, endpoint, map) => {
+
   if (endpoint.identify) {
     return identifyUtils.getFeaturesInView(vtLayer, endpoint, map);
+  }
+
+  if (endpoint.hasOwnProperty("zoom") && endpoint.zoom.hasOwnProperty("min")) {
+      if (map.getView().getZoom() < endpoint.zoom.min) {
+          return null;
+      }
+  }
+
+  if (endpoint.hasOwnProperty("zoom") && endpoint.zoom.hasOwnProperty("max")) {
+      if (map.getView().getZoom() > endpoint.zoom.max) {
+          return null;
+      }
   }
 
   return async () => {
@@ -33,8 +46,21 @@ let _getFeaturesInView = (vtLayer, endpoint, map) => {
 };
 
 let _getFeaturesUnderPixel = (vtLayer, endpoint, map) => {
+
   if (endpoint.identify) {
     return identifyUtils.getFeaturesUnderPixel(vtLayer, endpoint, map);
+  }
+
+  if (endpoint.hasOwnProperty("zoom") && endpoint.zoom.hasOwnProperty("min")) {
+      if (map.getView().getZoom() < endpoint.zoom.min) {
+          return null;
+      }
+  }
+
+  if (endpoint.hasOwnProperty("zoom") && endpoint.zoom.hasOwnProperty("max")) {
+      if (map.getView().getZoom() > endpoint.zoom.max) {
+          return null;
+      }
   }
 
   return async (pixel, event) => {
@@ -182,6 +208,16 @@ export const generate = (layerConfig, core) => {
 
     lyr.set('id', layerConfig.key);
     lyr.set('name', layerConfig.name);
+
+    
+
+    if(endpoint.hasOwnProperty("zoom") && endpoint.zoom.hasOwnProperty("min")) {
+      lyr.setMinZoom(endpoint.zoom.min);
+    }
+
+    if(endpoint.hasOwnProperty("zoom") && endpoint.zoom.hasOwnProperty("max")) {
+      lyr.setMaxZoom(endpoint.zoom.max);
+    }
 
 
     // TODO

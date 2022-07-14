@@ -452,7 +452,20 @@ let _getFeaturesInView = (vtLayer, endpoint, map) => {
     return identifyUtils.getFeaturesInView(vtLayer, endpoint, map);
   }
 
+  if(endpoint.hasOwnProperty("zoom") && endpoint.zoom.hasOwnProperty("min")) {
+    if(map.getView().getZoom() < endpoint.zoom.min) {
+      return null;
+    }
+  }
+
+  if(endpoint.hasOwnProperty("zoom") && endpoint.zoom.hasOwnProperty("max")) {
+    if(map.getView().getZoom() > endpoint.zoom.max) {
+      return null;
+    }
+  }
+  
   return async () => {
+    
     return getLoadingPromise(vtLayer).then(async () => {
       let features = vtLayer.getSource().getFeaturesInExtent(map.getView().calculateExtent());
       
@@ -489,6 +502,18 @@ let _getFeaturesUnderPixel = (vtLayer, endpoint, map) => {
   
   if(endpoint.identify) {
     return identifyUtils.getFeaturesUnderPixel(vtLayer, endpoint, map);
+  }
+
+  if (endpoint.hasOwnProperty("zoom") && endpoint.zoom.hasOwnProperty("min")) {
+      if (map.getView().getZoom() < endpoint.zoom.min) {
+          return null;
+      }
+  }
+
+  if (endpoint.hasOwnProperty("zoom") && endpoint.zoom.hasOwnProperty("max")) {
+      if (map.getView().getZoom() > endpoint.zoom.max) {
+          return null;
+      }
   }
 
   return async (pixel, event) => {
@@ -651,6 +676,16 @@ export const generate = (data, core) => {
         vtLayer.getFeaturesInView = _getFeaturesInView(vtLayer, endpoint, core.getMap())
 
         vtLayer.getFeaturesUnderPixel = _getFeaturesUnderPixel(vtLayer, endpoint, core.getMap());
+
+        if(endpoint.hasOwnProperty("zoom") && endpoint.zoom.hasOwnProperty("min")) {
+          console.log("Setting min zoom", endpoint.zoom.min);
+          vtLayer.setMinZoom(endpoint.zoom.min);
+        }
+
+        if(endpoint.hasOwnProperty("zoom") && endpoint.zoom.hasOwnProperty("max")) {
+          console.log("Setting max zoom", endpoint.zoom.max);
+          vtLayer.setMaxZoom(endpoint.zoom.max);
+        }
       
         vtLayer.on('postrender', handlePostRender(source, vtLayer));
         source.on('tileloadend', handlePostRender(source, vtLayer));

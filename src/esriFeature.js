@@ -251,6 +251,14 @@ export const generate = (data, core) => {
     });
     lyr.set('id', data.key);
 
+    if(endpoint.hasOwnProperty("zoom") && endpoint.zoom.hasOwnProperty("min")) {
+      lyr.setMinZoom(endpoint.zoom.min);
+    }
+
+    if(endpoint.hasOwnProperty("zoom") && endpoint.zoom.hasOwnProperty("max")) {
+      lyr.setMaxZoom(endpoint.zoom.max);
+    }
+
     lyr.getLegend = async () => {
       if(endpoint.legend)
         return endpoint.legend;

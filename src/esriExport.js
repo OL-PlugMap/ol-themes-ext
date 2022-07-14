@@ -292,6 +292,14 @@ export const generate = (data, core) => {
       return endpoint.legendEntries;
     }
 
+    if(endpoint.hasOwnProperty("zoom") && endpoint.zoom.hasOwnProperty("min")) {
+      lyr.setMinZoom(endpoint.zoom.min);
+    }
+
+    if(endpoint.hasOwnProperty("zoom") && endpoint.zoom.hasOwnProperty("max")) {
+      lyr.setMaxZoom(endpoint.zoom.max);
+    }
+
     return lyr;
   });
 

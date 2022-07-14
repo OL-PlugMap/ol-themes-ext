@@ -4,7 +4,7 @@
 ---
 This package extends openlayers map objects to allow for a configuration driven addition of layers as well as some layer management.
 
-This currently only supports ol 6.3. This package adds support to configure map layers into "themes" via json.
+This currently only supports ol 6.14. This package adds support to configure map layers into "themes" via json.
 
 ### Live Sample
 https://codesandbox.io/s/ol-themes-ext-v003-example-gvgr2
@@ -35,88 +35,53 @@ let map = new Map({
 let config =  {
     "layers": [
         {
-            "key": "lyr_esri_light_gray",
+            "key": "lyr_auto_basemap",
             "xyz": {
-                "maxZoom": 19,
-                "minZoom": 3,
                 "endpoints": [
                     {
                         "url": "https://services.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}",
-                        "bbox": null,
                         "zIndex": 10,
-                        "tokenKey": null,
-                        "layerDefs": null,
-                        "layersToShow": null
+                        "zoom": {
+                            "max": 8
+                        }
+                    },
+                    {
+                        "url": "https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}",
+                        "zIndex": 10,
+                        "zoom": {
+                            "min": 8
+                        }
                     }
                 ]
             },
-            "name": "Light Gray",
-            "legend": null,
+            "name": "Light Gray to Topo",
             "opacity": 1,
-            "identify": null
         },
         {
             "key": "lyr_esri_streets",
             "xyz": {
-                "maxZoom": 19,
-                "minZoom": 3,
                 "endpoints": [
                     {
                         "url": "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
-                        "bbox": null,
-                        "zIndex": 10,
-                        "tokenKey": null,
-                        "layerDefs": null,
-                        "layersToShow": null
+                        "zIndex": 10
                     }
                 ]
             },
             "name": "Streets",
-            "legend": null,
             "opacity": 1,
-            "identify": null
-        },
-        {
-            "key": "lyr_esri_topo",
-            "xyz": {
-                "maxZoom": 19,
-                "minZoom": 3,
-                "endpoints": [
-                    {
-                        "url": "https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}",
-                        "bbox": null,
-                        "zIndex": 10,
-                        "tokenKey": null,
-                        "layerDefs": null,
-                        "layersToShow": null
-                    }
-                ]
-            },
-            "name": "Topo",
-            "legend": null,
-            "opacity": null,
-            "identify": null
         },
         {
             "key": "lyr_esri_world_image",
             "xyz": {
-                "maxZoom": 19,
-                "minZoom": 3,
                 "endpoints": [
                     {
                         "url": "https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-                        "bbox": null,
                         "zIndex": 10,
-                        "tokenKey": null,
-                        "layerDefs": null,
-                        "layersToShow": null
                     }
                 ]
             },
             "name": "Aerial",
-            "legend": null,
             "opacity": 1,
-            "identify": null
         }
     ],
     "layerGroups": [
@@ -126,8 +91,7 @@ let config =  {
             "layers": [
                 "lyr_esri_streets",
                 "lyr_esri_world_image",
-                "lyr_esri_topo",
-                "lyr_esri_light_gray"
+                "lyr_auto_basemap"
             ],
             "openness": "closed"
         },
@@ -178,8 +142,9 @@ let basemaps = map.getCategoryByKey("cat_basemaps");
 
 //Additionally at this point the map should be displaying the  esri world image layer
 
-//Select the light grey layer
-basemaps.selectLayer("lyr_esri_light_gray");
+//Select the auto basemap layer
+// This layer will switch from light grey to topo at zoom level 8
+basemaps.selectLayer("lyr_auto_basemap");
 
 
 //For a MVT layer you can run this to get all the features currently rendered
@@ -218,6 +183,20 @@ window.map.themes.getCategoryByKey("cat_test").getLayerByKey("lyr_test").filter.
 
 ---
 ## Changelog
+- 0.1.16
+    - (+) added support for zoom levels within an endpoint. You can have multiple endpoints that are switched between automatically based on the zoom level
+- 0.1.12
+    - (+) Added identify support to wms and wfs
+- 0.1.11
+    - (+) Added deselctAll function to category
+- 0.1.9
+    - (+) Added support for WFS layers
+- 0.1.6
+    - (+) Added SLD legend support on WMS
+- 0.1.4
+    - (+) starting adding support for legend
+- 0.1.2
+    - (+) configuration is applied as a property of generated layers so additional values can be accessed outside of ol-themes-ext
 - 0.1.1
     - (*) Discovered the wonders of the files property in package.json to include all the required files
 - 0.1.0

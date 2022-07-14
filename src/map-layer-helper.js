@@ -1,5 +1,4 @@
-import { Group as LayerGroup, Tile as TileLayer } from "ol/layer.js";
-import XYZ from "ol/source/XYZ";
+import { Group as LayerGroup } from "ol/layer.js";
 
 import * as mvt from './mvt'
 import * as esriExport from './esriExport'
@@ -8,6 +7,7 @@ import * as staticVector from './staticVector'
 import * as wms from './wms'
 import * as wmts from './wmts'
 import * as wfs from './wfs'
+import * as xyz from './xyz'
 
 import { getLogger } from './logger'
 
@@ -263,7 +263,7 @@ export default class Themes {
 
     categoryGroup.transparency = categoryGroup.getOpacity();
 
-    
+
 
     /* TODO Set Groups */
     if (category.groups && category.groups.length > 0) {
@@ -318,9 +318,11 @@ export default class Themes {
       console.log("Getting features in view");
       let selectedLayers = categoryGroup.getSelectedLayers();
       let features = [];
-      let promises = selectedLayers.map(layer => {
-        return layer.getFeaturesInView();
-      });
+      let promises = selectedLayers
+        .filter(lyr => lyr.getFeaturesInView)
+        .map(layer => {
+          return layer.getFeaturesInView();
+        });
       let results = await Promise.all(promises);
       results.forEach(result => {
         features = features.concat(result);
@@ -333,9 +335,11 @@ export default class Themes {
       console.log("Getting features under pixel");
       let selectedLayers = categoryGroup.getSelectedLayers();
       let features = [];
-      let promises = selectedLayers.map(layer => {
-        return layer.getFeaturesUnderPixel(pixel, event);
-      });
+      let promises = selectedLayers
+        .filter(lyr => lyr.getFeaturesInView)
+        .map(layer => {
+          return layer.getFeaturesUnderPixel(pixel, event);
+        });
       let results = await Promise.all(promises);
       results.forEach(result => {
         features = features.concat(result);
@@ -764,60 +768,36 @@ export default class Themes {
       switch (layerType) {
         case "mvt":
           layers = mvt.generate(layerConfig, core);
-          return this.groupLayers(layerConfig, layers);
+          break;
         case "staticvector":
           layers = staticVector.generate(layerConfig, core);
-          return this.groupLayers(layerConfig, layers);
+          break;
         case "xyz":
           getLogger()(layerConfig.config.value.endpoints);
-          layers = layerConfig.config.value.endpoints.map(endpoint => {
-            let lyr = new TileLayer({
-              visible: false,
-              preload: 4,
-              zIndex: endpoint.zIndex || 0,
-              opacity: isNaN(layerConfig.opacity) || layerConfig.opacity == null ? 1 : layerConfig.opacity,
-              source: new XYZ({
-                crossOrigin: 'anonymous',
-                url: endpoint.url,
-                maxZoom: layerConfig.config.value.maxZoom || 26,
-                minZoom: layerConfig.config.value.minZoom || 1,
-                tileLoadFunction: (imageTile, src) => {
-                  imageTile.getImage().src = src;
-                }
-              })
-            });
-            lyr.set('id', layerConfig.key);
-            lyr.set('name', layerConfig.name);
-            return lyr;
-          });
-
-          return this.groupLayers(layerConfig, layers);
-
+          layers = xyz.generate(layerConfig, core);
+          break;
         case "wmts":
           layers = wmts.generate(layerConfig, core);
-          return this.groupLayers(layerConfig, layers);
-
+          break;
         case "wms":
           layers = wms.generate(layerConfig, core);
-          return this.groupLayers(layerConfig, layers);
-
+          break;
         case "wfs":
           layers = wfs.generate(layerConfig, core);
-          return this.groupLayers(layerConfig, layers);
-
+          break;
         case "esrimapservice":
         case "esriexport":
           layers = esriExport.generate(layerConfig, core);
-          return this.groupLayers(layerConfig, layers);
-
+          break;
         case "esrifeatureservice":
         case "esrifeature":
           layers = esriFeature.generate(layerConfig, core);
-          return this.groupLayers(layerConfig, layers);
-
+          break;
         default:
           throw new Error(`Layer type '${layerConfig.config.type}' has not been implemented.`);
       }
+      
+      return this.groupLayers(layerConfig, layers);
     }
     catch (err) {
       debugger;

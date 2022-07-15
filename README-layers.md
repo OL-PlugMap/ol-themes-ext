@@ -1,60 +1,3 @@
-```JSON
-{
-    "layers": [
-        {
-            "key": "lyr_auto_basemap",
-            "xyz": {
-                "endpoints": [
-                    {
-                        "url": "https://services.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}",
-                        "zIndex": 10,
-                        "zoom": {
-                            "max": 8
-                        }
-                    },
-                    {
-                        "url": "https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}",
-                        "zIndex": 10,
-                        "zoom": {
-                            "min": 8
-                        }
-                    }
-                ]
-            },
-            "name": "Light Gray to Topo",
-            "opacity": 1,
-        },
-        {
-            "key": "lyr_esri_streets",
-            "xyz": {
-                "endpoints": [
-                    {
-                        "url": "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
-                        "zIndex": 10
-                    }
-                ]
-            },
-            "name": "Streets",
-            "opacity": 1,
-        },
-        {
-            "key": "lyr_esri_world_image",
-            "xyz": {
-                "endpoints": [
-                    {
-                        "url": "https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-                        "zIndex": 10,
-                    }
-                ]
-            },
-            "name": "Aerial",
-            "opacity": 1,
-        }
-    ]
-}
-
-```
-
 # Layer Configuration
 Fields:
 
@@ -151,16 +94,24 @@ Example Config
                 "url": "https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}",
                 "zIndex": 10,
                 "zoom": {
-                    "min": 8
+                    "min": 8,
+                    "max": 14
+                }
+            },
+            {
+                "url": "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
+                "zIndex": 10,
+                "zoom": {
+                    "min": 14
                 }
             }
         ]
     },
-    "name": "Light Gray to Topo",
+    "name": "Light Gray to Topo To Streets",
     "opacity": 1,
 },
 ```
-This will result in an XYZ layer starting with ESRI light gray and switching over to ESRI topo once zoom level **9** has been reached
+This will result in an XYZ layer starting with ESRI light gray and switching over to ESRI topo once zoom level **9** has been reached. Once level **15** has been reached the layer will switch over to the ESRI world street.
 
 # Legend
 

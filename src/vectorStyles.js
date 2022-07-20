@@ -98,7 +98,7 @@ class ConfigurableStyleEngine {
         return that.highlightStyle;
       }
 
-      var renderFeature = this.featureShouldBeRendered(source, feature);
+      var renderFeature = that.featureShouldBeRendered(source, feature);
 
 
       let map = endpoint.style.dynamic.map;
@@ -108,21 +108,21 @@ class ConfigurableStyleEngine {
         return invisibleStyle;
       } else if (feature.get("selected")) {
         return selectedStyle;
-      } else if (feature && ((feature.properties_ && feature.properties_[field]) || feature.get && feature.get(field))) {
+      } else if (feature && ((feature.properties_ && feature.properties_[field] !== undefined) || feature.get && feature.get(field))) {
         var val = feature.properties_ ? feature.properties_[field] + "" : feature.get(field) + "";
         if (map[val]) {
           var style = map[val];
 
-          let styleConf = this.convertToStyleConf(style);
+          let styleConf = that.convertToStyleConf(style);
 
           return new Style(styleConf);
         }
         else {
-          return this.invisibleStyle;
+          return that.invisibleStyle;
         }
       }
       else {
-        return this.unstyled;
+        return that.unstyled;
       }
 
     }

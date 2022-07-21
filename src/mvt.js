@@ -4,7 +4,7 @@ import VectorLayer from 'ol/layer/Vector';
 
 import VectorTileSource from 'ol/source/VectorTile';
 
-import {Cluster, Vector as VectorSource} from 'ol/source';
+import { Cluster, Vector as VectorSource } from 'ol/source';
 
 import MVT from 'ol/format/MVT';
 
@@ -226,6 +226,38 @@ let _filterEngine = (source) => {
   };
 }
 
+const getLegend_ = (endpoint) => {
+  let legend = [];
+  if (endpoint.style) {
+    // Create legend entries based on the style
+    let style = endpoint.style;
+
+    if (style.dynamic) {
+      let mapping = style.dynamic.map;
+      let keys = Object.keys(mapping);
+      for (const element of keys) {
+        let entry = {
+          label: mapping[element].label || element,
+          color: mapping[element].fillColor
+        };
+        legend.push(entry);
+      }
+
+    } else if (style.static) {
+      // TODO: Handle all of our style methods such as image, pattern, etc.
+      let entry = {
+        label: style.static.label || "",
+        color: style.static.fillColor
+      };
+      legend.push(entry);
+    }
+
+  }
+
+  return async () => {
+    return legend;
+  }
+}
 
 
 
@@ -234,7 +266,7 @@ let _applyFilters = (source, vtLayer) => {
   //TODO: Can we interpret vtLayer or source based off the other?
   return (layerset) => {
     if (!source.filter)
-    source.filter = {};
+      source.filter = {};
 
     if (Array.isArray(layerset.filts)) {
       layerset.filts.forEach(lyr => {
@@ -278,7 +310,7 @@ let _applyFilters = (source, vtLayer) => {
 let _clearFilters = (source) => {
   (layer) => {
     if (!source.filter)
-    source.filter = {};
+      source.filter = {};
     delete endpoint.filter['test_' + layer.layerid];
 
     if (Object.keys(source.filter).length == 0) {
@@ -293,24 +325,20 @@ let _clearFilters = (source) => {
 let getId = (feature) => {
   getLogger()("Getting id from", feature)
   let featureId = -1;
-    if(isNaN(feature))
-    {
-      getLogger()("Feature isnan", feature)
-      if(feature.properties_)
-      {
-        featureId = feature.get("iso_a3"); //TODO
-        getLogger()("Got id", featureId)
-      }
-      else
-      {
-        getLogger()("Halp");
-      }
+  if (isNaN(feature)) {
+    getLogger()("Feature isnan", feature)
+    if (feature.properties_) {
+      featureId = feature.get("iso_a3"); //TODO
+      getLogger()("Got id", featureId)
     }
-    else
-    {
-      getLogger()("Feature is a number", feature);
-      featureId = feature;
+    else {
+      getLogger()("Halp");
     }
+  }
+  else {
+    getLogger()("Feature is a number", feature);
+    featureId = feature;
+  }
   getLogger("Returning id for feature", featureId);
   return featureId;
 }
@@ -333,14 +361,13 @@ let _highlight = (source) => {
   source.highlightFeats = {};
   return (feature) => {
     getLogger()("Highlighting", feature);
-    
+
     source.highlightFeats[getId(feature)] = true;
     source.changed();
   };
 };
 
-let _refreshFunction = (source) =>
-{
+let _refreshFunction = (source) => {
   return () => {
     source.changed();
     source.refresh();
@@ -349,9 +376,9 @@ let _refreshFunction = (source) =>
 
 
 let _loader = (endpoint) => {
-  return function(tile, url) {
+  return function (tile, url) {
     getLogger()("Loader", tile, url);
-    tile.setLoader(function(extent, resolution, projection) {
+    tile.setLoader(function (extent, resolution, projection) {
       {
         tile.setState(TileState.LOADING);
         tile.status__ = "loading"
@@ -361,13 +388,12 @@ let _loader = (endpoint) => {
           typeof url === 'function' ? url(extent, resolution, projection) : url,
           true
         );
-        for(let header in endpoint.headers)
-        {
+        for (let header in endpoint.headers) {
           xhr.setRequestHeader(header, endpoint.headers[header]);
         }
 
         xhr.responseType = 'arraybuffer';
-        
+
         xhr.withCredentials = false;
 
         /**
@@ -382,7 +408,7 @@ let _loader = (endpoint) => {
             /** @type {Document|Node|Object|string|undefined} */
             let source;
             source = /** @type {ArrayBuffer} */ (xhr.response);
-            
+
             if (source) {
               let feats = [];
               try {
@@ -395,13 +421,13 @@ let _loader = (endpoint) => {
               }
               tile.onLoad(
                 /** @type {Array<import("./Feature.js").default>} */
-                ( feats
+                (feats
                 ),
                 format.readProjection(source)
               );
-              
-            tile.setState(TileState.LOADED);
-            tile.status__ = "loaded"
+
+              tile.setState(TileState.LOADED);
+              tile.status__ = "loaded"
             } else {
               tile.setState(TileState.ERROR);
               tile.onError();
@@ -416,9 +442,9 @@ let _loader = (endpoint) => {
         /**
          * @private
          */
-        xhr.onerror = function() { 
+        xhr.onerror = function () {
           tile.setState(TileState.ERROR);
-          tile.status__ = "error"; 
+          tile.status__ = "error";
           tile.onError()
         };
         xhr.send();
@@ -432,7 +458,7 @@ let _deduplicateFeatures = (features) => {
   let rets = {};
 
   features.forEach((feat) => {
-    rets[feat.getId()+""] = feat;
+    rets[feat.getId() + ""] = feat;
   });
 
   var keys = Object.keys(rets);
@@ -452,23 +478,23 @@ let _getFeaturesInView = (vtLayer, endpoint, map) => {
     return identifyUtils.getFeaturesInView(vtLayer, endpoint, map);
   }
 
-  if(endpoint.hasOwnProperty("zoom") && endpoint.zoom.hasOwnProperty("min")) {
-    if(map.getView().getZoom() < endpoint.zoom.min) {
+  if (endpoint.hasOwnProperty("zoom") && endpoint.zoom.hasOwnProperty("min")) {
+    if (map.getView().getZoom() < endpoint.zoom.min) {
       return null;
     }
   }
 
-  if(endpoint.hasOwnProperty("zoom") && endpoint.zoom.hasOwnProperty("max")) {
-    if(map.getView().getZoom() > endpoint.zoom.max) {
+  if (endpoint.hasOwnProperty("zoom") && endpoint.zoom.hasOwnProperty("max")) {
+    if (map.getView().getZoom() > endpoint.zoom.max) {
       return null;
     }
   }
-  
+
   return async () => {
-    
+
     return getLoadingPromise(vtLayer).then(async () => {
       let features = vtLayer.getSource().getFeaturesInExtent(map.getView().calculateExtent());
-      
+
       let ret = _deduplicateFeatures(features);
 
       return ret;
@@ -479,17 +505,16 @@ let _getFeaturesInView = (vtLayer, endpoint, map) => {
 
 let getLoadingPromise = (vtLayer) => {
   let resolve_, reject_ = null;
-  let promise = new Promise((resolve,reject) => {
+  let promise = new Promise((resolve, reject) => {
     resolve_ = resolve; reject_ = reject;
   });
 
-  if(!vtLayer.loadPromiseResolves)
+  if (!vtLayer.loadPromiseResolves)
     vtLayer.loadPromiseResolves = [];
   vtLayer.loadPromiseResolves.push(resolve_);
 
   setTimeout(() => {
-    if(!isLoadingTiles(vtLayer.getSource()))
-    {
+    if (!isLoadingTiles(vtLayer.getSource())) {
       resolve_("Not Loading");
     }
   }, 150);
@@ -499,32 +524,31 @@ let getLoadingPromise = (vtLayer) => {
 }
 
 let _getFeaturesUnderPixel = (vtLayer, endpoint, map) => {
-  
-  if(endpoint.identify) {
+
+  if (endpoint.identify) {
     return identifyUtils.getFeaturesUnderPixel(vtLayer, endpoint, map);
   }
 
   if (endpoint.hasOwnProperty("zoom") && endpoint.zoom.hasOwnProperty("min")) {
-      if (map.getView().getZoom() < endpoint.zoom.min) {
-          return null;
-      }
+    if (map.getView().getZoom() < endpoint.zoom.min) {
+      return null;
+    }
   }
 
   if (endpoint.hasOwnProperty("zoom") && endpoint.zoom.hasOwnProperty("max")) {
-      if (map.getView().getZoom() > endpoint.zoom.max) {
-          return null;
-      }
+    if (map.getView().getZoom() > endpoint.zoom.max) {
+      return null;
+    }
   }
 
   return async (pixel, event) => {
-    if(!pixel || !Array.isArray(pixel) || pixel.length != 2)
-    {
+    if (!pixel || !Array.isArray(pixel) || pixel.length != 2) {
       console.warn("Invalid parameter provided to getFeaturesUnderPixel. Expected an array with a length of 2. Got", pixel);
     }
     getLogger()("Getting features at", pixel);
     return getLoadingPromise(vtLayer).then(async () => {
       getLogger()("Loaded tiles, calling getFeatures");
-      
+
       let coords = map.getCoordinateFromPixel(pixel);
       getLogger()("Coords", coords);
 
@@ -533,8 +557,7 @@ let _getFeaturesUnderPixel = (vtLayer, endpoint, map) => {
 
       let buf = (25 - zoom);
 
-      switch(zoom)
-      {
+      switch (zoom) {
         case 1:
         case 2:
         case 3:
@@ -566,16 +589,16 @@ let _getFeaturesUnderPixel = (vtLayer, endpoint, map) => {
         default: buf = 1; break;
       }
 
-      if(buf <= 0) buf = 1;
+      if (buf <= 0) buf = 1;
       getLogger()("buf", buf);
 
-      let ext = [coords[0]-buf,coords[1]-buf,coords[0]+buf,coords[1]+buf]
+      let ext = [coords[0] - buf, coords[1] - buf, coords[0] + buf, coords[1] + buf]
       getLogger()("ext", ext);
 
       let features = vtLayer.getSource().getFeaturesInExtent(ext);
       //let features = await vtLayer.getFeatures(pixel);
       getLogger()("Got features", features);
-      
+
       let ret = _deduplicateFeatures(features);
       getLogger()("Deduplicated", ret);
 
@@ -596,8 +619,8 @@ let isLoadingTiles = (source) => {
 }
 
 let handlePostRender = (source, vtLayer) => {
-  
-  vtLayer.loadPromise = new Promise((resolve,reject) => {
+
+  vtLayer.loadPromise = new Promise((resolve, reject) => {
     vtLayer.loadPromiseResolve = resolve;
     vtLayer.loadPromiseReject = reject;
   });
@@ -606,15 +629,12 @@ let handlePostRender = (source, vtLayer) => {
     let loadingTiles = source.sourceTileCache.getValues().filter(tile => { return tile.status__ == "loading" });
     let loadingTilesCount = loadingTiles.length;
 
-    if(loadingTilesCount > 0)
-    {
+    if (loadingTilesCount > 0) {
       //Still loading
     }
-    else
-    {
+    else {
       //Loaded! Fire the loaded promise 
-      if(vtLayer.loadPromiseResolves)
-      {
+      if (vtLayer.loadPromiseResolves) {
         vtLayer.loadPromiseResolves.forEach(resolve => {
           resolve("Looded")
         });
@@ -625,134 +645,134 @@ let handlePostRender = (source, vtLayer) => {
 }
 
 export const generate = (data, core) => {
-    var layers = data.config.value.endpoints.map(endpoint => {
-        var url = endpoint.url;
+  var layers = data.config.value.endpoints.map(endpoint => {
+    var url = endpoint.url;
 
-        var source = new VectorTileSource({
-          maxZoom: 15,
-          format: new MVT({
-            idProperty: 'id'
-          }),
-          tileSize: endpoint.tileSize === undefined ? 256 : endpoint.tileSize,
-          url: url
-        });
+    var source = new VectorTileSource({
+      maxZoom: 15,
+      format: new MVT({
+        idProperty: 'id'
+      }),
+      tileSize: endpoint.tileSize === undefined ? 256 : endpoint.tileSize,
+      url: url
+    });
 
-        if(endpoint.headers)
-        {
-          var loader = _loader(endpoint);
+    if (endpoint.headers) {
+      var loader = _loader(endpoint);
 
-          source.setTileLoadFunction(loader);
-        }
+      source.setTileLoadFunction(loader);
+    }
 
-        var vtLayer = new VectorTileLayer({
-          declutter: data.config.value.declutter === true,
-          source: source,
-          zIndex: endpoint.zIndex || 1000,
-        });
+    var vtLayer = new VectorTileLayer({
+      declutter: data.config.value.declutter === true,
+      source: source,
+      zIndex: endpoint.zIndex || 1000,
+    });
 
-        let moo = new ConfigurableStyle(endpoint, source, vtLayer);
-        vtLayer.moo = moo;
-        vtLayer.style = moo.getStyle;
-        vtLayer.setStyle(moo.getStyle)
+    let moo = new ConfigurableStyle(endpoint, source, vtLayer);
+    vtLayer.moo = moo;
+    vtLayer.style = moo.getStyle;
+    vtLayer.setStyle(moo.getStyle)
 
-        vtLayer.set('id', data.key);
-        
-        vtLayer.refreshFunction = _refreshFunction(source);
+    vtLayer.set('id', data.key);
 
-        vtLayer.highlight = _highlight(source);
+    vtLayer.refreshFunction = _refreshFunction(source);
 
-        vtLayer.unhighlight = _unhighlight(source);
+    vtLayer.highlight = _highlight(source);
 
-        vtLayer.unhighlightAll = _unhighlightAll(source);
+    vtLayer.unhighlight = _unhighlight(source);
 
-        vtLayer.applyFilters = _applyFilters(source, vtLayer);
+    vtLayer.unhighlightAll = _unhighlightAll(source);
 
-        vtLayer.filter = _buildEngine(source,vtLayer);
-          
-        vtLayer.clearFilters = _clearFilters(source);
+    vtLayer.applyFilters = _applyFilters(source, vtLayer);
 
-        vtLayer.filterEngine = _filterEngine(source);
+    vtLayer.filter = _buildEngine(source, vtLayer);
 
-        vtLayer.getFeaturesInView = _getFeaturesInView(vtLayer, endpoint, core.getMap())
+    vtLayer.clearFilters = _clearFilters(source);
 
-        vtLayer.getFeaturesUnderPixel = _getFeaturesUnderPixel(vtLayer, endpoint, core.getMap());
+    vtLayer.filterEngine = _filterEngine(source);
 
-        if(endpoint.hasOwnProperty("zoom") && endpoint.zoom.hasOwnProperty("min")) {
-          console.log("Setting min zoom", endpoint.zoom.min);
-          vtLayer.setMinZoom(endpoint.zoom.min);
-        }
+    vtLayer.getFeaturesInView = _getFeaturesInView(vtLayer, endpoint, core.getMap())
 
-        if(endpoint.hasOwnProperty("zoom") && endpoint.zoom.hasOwnProperty("max")) {
-          console.log("Setting max zoom", endpoint.zoom.max);
-          vtLayer.setMaxZoom(endpoint.zoom.max);
-        }
-      
-        vtLayer.on('postrender', handlePostRender(source, vtLayer));
-        source.on('tileloadend', handlePostRender(source, vtLayer));
-        source.on('tileloaderror', handlePostRender(source, vtLayer));
+    vtLayer.getFeaturesUnderPixel = _getFeaturesUnderPixel(vtLayer, endpoint, core.getMap());
 
-        if(data.config.value.cluster && data.config.value.cluster.enabled)
-        {
-          const clusterSource = new Cluster({
-            distance: data.config.value.cluster.distance,
-            minDistanc: data.config.value.cluster.minDistance,
-            source: source,
-          });
+    vtLayer.getLegend = getLegend_(endpoint);
 
-          const clusters = new VectorLayer({
-            source: clusterSource,
-            style: function (feature) {
-              const size = feature.get('features').length;
-              let style = styleCache[size];
-              if (!style) {
-                style = new Style({
-                  image: new CircleStyle({
-                    radius: 10,
-                    stroke: new Stroke({
-                      color: '#fff',
-                    }),
-                    fill: new Fill({
-                      color: '#3399CC',
-                    }),
-                  }),
-                  text: new Text({
-                    text: size.toString(),
-                    fill: new Fill({
-                      color: '#fff',
-                    }),
-                  }),
-                });
-                styleCache[size] = style;
-              }
-              return style;
-            },
-          });
+    if (endpoint.hasOwnProperty("zoom") && endpoint.zoom.hasOwnProperty("min")) {
+      console.log("Setting min zoom", endpoint.zoom.min);
+      vtLayer.setMinZoom(endpoint.zoom.min);
+    }
 
-          let group = new LayerGroup({layers: [ vtLayer, clusters ]});
+    if (endpoint.hasOwnProperty("zoom") && endpoint.zoom.hasOwnProperty("max")) {
+      console.log("Setting max zoom", endpoint.zoom.max);
+      vtLayer.setMaxZoom(endpoint.zoom.max);
+    }
 
-          let oldVis = group.setVisible;
-          let oldOpac = group.setOpacity;
+    vtLayer.on('postrender', handlePostRender(source, vtLayer));
+    source.on('tileloadend', handlePostRender(source, vtLayer));
+    source.on('tileloaderror', handlePostRender(source, vtLayer));
 
-          group.setVisible = function(vis) {
-            oldVis.call(group, vis);
-            this.getLayers().getArray().forEach(layer => {
-              layer.setVisible(vis);
-            });
-          };
-
-          group.setOpacity = function(opac) {
-            oldOpac.call(group, opac);
-            this.getLayers().getArray().forEach(layer => {
-              layer.setOpacity(opac);
-            });
-          };
-
-
-          vtLayer = group;
-        }
-
-        return vtLayer;
+    if (data.config.value.cluster && data.config.value.cluster.enabled) {
+      const clusterSource = new Cluster({
+        distance: data.config.value.cluster.distance,
+        minDistanc: data.config.value.cluster.minDistance,
+        source: source,
       });
 
-    return layers;
+      const clusters = new VectorLayer({
+        source: clusterSource,
+        style: function (feature) {
+          const size = feature.get('features').length;
+          let style = styleCache[size];
+          if (!style) {
+            style = new Style({
+              image: new CircleStyle({
+                radius: 10,
+                stroke: new Stroke({
+                  color: '#fff',
+                }),
+                fill: new Fill({
+                  color: '#3399CC',
+                }),
+              }),
+              text: new Text({
+                text: size.toString(),
+                fill: new Fill({
+                  color: '#fff',
+                }),
+              }),
+            });
+            styleCache[size] = style;
+          }
+          return style;
+        },
+      });
+
+      let group = new LayerGroup({ layers: [vtLayer, clusters] });
+
+      let oldVis = group.setVisible;
+      let oldOpac = group.setOpacity;
+
+      group.setVisible = function (vis) {
+        oldVis.call(group, vis);
+        this.getLayers().getArray().forEach(layer => {
+          layer.setVisible(vis);
+        });
+      };
+
+      group.setOpacity = function (opac) {
+        oldOpac.call(group, opac);
+        this.getLayers().getArray().forEach(layer => {
+          layer.setOpacity(opac);
+        });
+      };
+
+
+      vtLayer = group;
+    }
+
+    return vtLayer;
+  });
+
+  return layers;
 }

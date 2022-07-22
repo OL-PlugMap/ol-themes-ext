@@ -5,11 +5,6 @@ import { _checkFilter } from './filterEngine'
 
 import { getLogger } from './logger'
 
-class test {
-  constructor() {}
-  moo = () => { console.log("moo") }
-}
-
 class ConfigurableStyleEngine {
   constructor() {
 
@@ -66,9 +61,9 @@ class ConfigurableStyleEngine {
   }
 
   featureShouldBeRendered (source, feature) {
-    var renderFeature = true;
-    var fev = feature.get("FilterEngine");
-    var r = true;
+    let renderFeature = true;
+    let fev = feature.get("FilterEngine");
+    let r = true;
 
     if (fev && fev.renderFn) {
       fev.renderFn();
@@ -98,7 +93,7 @@ class ConfigurableStyleEngine {
         return that.highlightStyle;
       }
 
-      var renderFeature = that.featureShouldBeRendered(source, feature);
+      let renderFeature = that.featureShouldBeRendered(source, feature);
 
 
       let map = endpoint.style.dynamic.map;
@@ -109,9 +104,9 @@ class ConfigurableStyleEngine {
       } else if (feature.get("selected")) {
         return selectedStyle;
       } else if (feature && ((feature.properties_ && feature.properties_[field] !== undefined) || feature.get && feature.get(field))) {
-        var val = feature.properties_ ? feature.properties_[field] + "" : feature.get(field) + "";
+        let val = feature.properties_ ? feature.properties_[field] + "" : feature.get(field) + "";
         if (map[val]) {
-          var style = map[val];
+          let style = map[val];
 
           let styleConf = that.convertToStyleConf(style);
 
@@ -126,6 +121,23 @@ class ConfigurableStyleEngine {
       }
 
     }
+  }
+
+  async dynamicLegend (endpoint, source) {
+    // Iterate through all the possible mapped values and populate the legend
+    let legend = [];
+
+    let map = endpoint.style.dynamic.map;
+    let keys = Object.keys(map);
+    for (const element of keys) {
+      let key = element;
+      let style = map[key];
+
+      let entry = this.convertToLegend(style);
+      legend.push(entry);
+    }
+
+    return legend;
   }
 
   convertToStyleConf (style) {
@@ -185,6 +197,78 @@ class ConfigurableStyleEngine {
     return styleConf;
   }
 
+  convertToLegend (style) {
+    
+    // This function will return a legend for the given style.
+    // The legend is a list of legend entries
+    // Each legend entry has a label and a symbol.
+    // the label is a human readable string
+    // the symbol is a svg element that can be used to display the legend entry.
+    // the symbol can be one of the following:
+    // - a color
+    // - an image
+    
+    
+    if(style.pattern) {
+      // Generate an image using the ol-ext pattern library
+      let pattern = this.pattern(style);
+      let image = pattern.getImage().toDataURL();
+      
+      return { 
+        label: style.label || "",
+        image
+      }
+    } else if(style.fillColor) {
+      // Set the color on the legend entry
+      return {
+        label: style.label || "",
+        color: style.fillColor || "rgba(255,0,0,0.5)"
+      };
+    }
+
+    if(style.image) {
+      if(style.image.type == "circle") {
+        // Generate a circle on the legend entry
+        // Create a canvas element
+        // Draw a circle on the canvas
+        // Create a data url from the canvas
+        // Set the image on the legend entry
+
+        let canvas = document.createElement("canvas");
+        let ctx = canvas.getContext("2d");
+        let radius = style.image.radius != undefined ? style.image.radius : 10;
+        let strokeWidth = style.image.strokeWidth != undefined ? style.image.strokeWidth : 4;
+        let strokeColor = style.image.strokeColor != undefined ? style.image.strokeColor : '#fff';
+        let fillColor = style.image.fillColor != undefined ? style.image.fillColor : '#3399CC';
+        let width = radius * 2 + strokeWidth;
+        let height = radius * 2 + strokeWidth;
+        canvas.width = width;
+        canvas.height = height;
+        ctx.beginPath();
+        ctx.arc(radius, radius, radius, 0, 2 * Math.PI);
+        ctx.lineWidth = strokeWidth;
+        ctx.strokeStyle = strokeColor;
+        ctx.stroke();
+        ctx.fillStyle = fillColor;
+        ctx.fill();
+        let dataUrl = canvas.toDataURL();
+        return {
+          label: style.label || "",
+          image: dataUrl
+        };
+      } else if(style.image.type == "icon") {
+        // Return the icon on the legend entry
+        return {
+          label: style.label || "",
+          icon: style.image.src || ""
+        };
+      }
+    }
+
+
+
+  }
+
   staticStylingWithDynamicTextLabels (endpoint, source, styleConf, style) {
     let that = this;
     this.style = style;
@@ -197,7 +281,7 @@ class ConfigurableStyleEngine {
         that.styleConf = that.convertToStyleConf(that.style);
       }
 
-      var val = "";
+      let val = "";
       if (feature.properties_ && feature.properties_[that.style.text.dynamic])
         val = feature.properties_[that.style.text.dynamic] + "";
 
@@ -275,6 +359,12 @@ class ConfigurableStyleEngine {
 
       return new Style(that.styleConf);
     }
+  }
+
+  async staticLegend (endpoint, source) {
+    let legend = [ this.convertToLegend(this.style) ];
+    legend.push({"label": "No data"});
+    return legend;
   }
 
   urlStyling (endpoint, source) {
@@ -371,18 +461,24 @@ export class ConfigurableStyle {
     this.endpoint = endpoint;
 
     this.getStyle = () => { console.log("Error parsing style") };
+    this.getLegend = () => { console.log("Error parsing legend") };
 
     if (endpoint.style) {
       let configurableStyleEngine = new ConfigurableStyleEngine();
 
       if (endpoint.style.url) {
         this.getStyle = configurableStyleEngine.urlStyling(endpoint, source);
+
+        //TODO:
+        this.getLegend = async () => { return [{ "label": "Not Implemented" }]};
       }
       else if (endpoint.style.dynamic) {
         this.getStyle = configurableStyleEngine.dynamicStyling(endpoint, source);
+        this.getLegend = configurableStyleEngine.dynamicLegend(endpoint, source);
       }
       else if (endpoint.style.static) {
         this.getStyle = configurableStyleEngine.staticStyling(endpoint, source);
+        this.getLegend = configurableStyleEngine.staticLegend(endpoint, source);
       }
     }
     else {

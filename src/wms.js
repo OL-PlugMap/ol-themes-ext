@@ -4,7 +4,16 @@ import ImageWMS from 'ol/source/ImageWMS.js';
 import ImageLayer from "ol/layer/Image";
 import { getLogger } from './logger'
 import { getSldLegend } from './sharedOGC'
-import ServerType from 'ol/source/WMSServerType'
+
+/*
+*  Patch because WMSServerType is not available in 6.15 anymore
+*/
+const ServerType = {
+    GEOSERVER: 'geoserver',
+    MAPSERVER: 'mapserver',
+    QGIS: 'qgis',
+    CARMENTA_SERVER: 'carmentaserver',
+}
 
 import * as identifyUtils from './identifyUtils'
 

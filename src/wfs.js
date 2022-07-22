@@ -2,18 +2,25 @@ import { get } from "ol/proj";
 import { getWidth } from "ol/extent";
 import { getLogger } from './logger'
 import { getSldLegend } from './sharedOGC'
-import ServerType from 'ol/source/WMSServerType'
 
 import VectorLayer from 'ol/layer/Vector';
 
 import VectorSource from 'ol/source/Vector';
 import GeoJSON from "ol/format/GeoJSON";
-import { tile as tileStrategy, bbox as bboxStrategy } from "ol/loadingstrategy";
+import { tile as tileStrategy } from "ol/loadingstrategy";
 import { createXYZ } from "ol/tilegrid";
 
-//TODO this should use the existing vectorStyle function
-import { Style, Fill, Stroke, Circle as CircleStyle, Text } from 'ol/style';
+import { Style, Fill, Stroke } from 'ol/style';
 
+/*
+*  Patch because WMSServerType is not available in 6.15 anymore
+*/
+const ServerType = {
+  GEOSERVER: 'geoserver',
+  MAPSERVER: 'mapserver',
+  QGIS: 'qgis',
+  CARMENTA_SERVER: 'carmentaserver',
+}
 
 // TODO: Move these to the identify utils
 let _getFeaturesInView = (vtLayer, endpoint, map) => {
@@ -130,23 +137,12 @@ let _getFeaturesUnderPixel = (vtLayer, endpoint, map) => {
 };
 
 export const generate = (layerConfig, core) => {
-  var projection = get("EPSG:3857"),
+  let projection = get("EPSG:3857"),
     projectionExtent = projection.getExtent(),
     size = getWidth(projectionExtent) / 256,
-    zooms = 15 + 1,
-    resolutions = new Array(zooms);
-  for (let z = 0; z < zooms; ++z) {
-    resolutions[z] = size / Math.pow(2, z);
-  }
+    zooms = 15 + 1;
 
   let layers = layerConfig.config.value.endpoints.map(endpoint => {
-    //The random adds a random value to the parameter
-    //essentially cache busting
-    let customParams = {
-      get random() {
-        return Math.random();
-      }
-    };
 
 
     let serverType = ServerType.GEOSERVER;
@@ -242,6 +238,10 @@ export const generate = (layerConfig, core) => {
 
     return lyr;
   });
+
+  for(const layer of layers) {
+    
+  }
 
   return layers;
 }

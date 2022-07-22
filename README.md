@@ -183,6 +183,12 @@ window.map.themes.getCategoryByKey("cat_test").getLayerByKey("lyr_test").filter.
 
 ---
 ## Changelog
+- 0.1.19
+    - Better support for legend in vector layers with a custom style defined
+    - Update to ol 6.15.1
+    - Fixed issue with styling using patterns in vector layers
+- 0.1.18
+    - Basic support for legend on mvt layers
 - 0.1.16
     - (+) added support for zoom levels within an endpoint. You can have multiple endpoints that are switched between automatically based on the zoom level
 - 0.1.12

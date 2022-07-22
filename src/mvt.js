@@ -18,8 +18,8 @@ import TileState from 'ol/TileState'
 let _filterEngine = (source) => {
   (feature) => {
     getLogger()("Filter Engine Old");
-    var renderFeature = true;
-    var fev =
+    let renderFeature = true;
+    let fev =
     {
       render: false
       , renderFn: function () { return false; }
@@ -30,24 +30,24 @@ let _filterEngine = (source) => {
     if (source.filter) {
       fev.filtersRan = true;
       renderFeature = true;
-      var keys = Object.keys(source.filter);
+      let keys = Object.keys(source.filter);
       keys.forEach(key => {
         getLogger()("Applying", key, source.filter[key]);
-        var filterResult =
+        let filterResult =
         {
           checked: true
           , result: false
           , valuesChecked: {}
         }
 
-        var valuesMet = [];
+        let valuesMet = [];
         source.filter[key].values.forEach(value => {
-          var valueResult =
+          let valueResult =
           {
             conditionMet: false
           }
           if (value.filter.all) {
-            var allMet = true;
+            let allMet = true;
             value.filter.all.forEach(filter => {
               if (!feature || !feature.properties_) {
               }
@@ -56,7 +56,7 @@ let _filterEngine = (source) => {
                   allMet = allMet && (feature.properties_[filter.field] + "") == filter.values.exact;
                 }
                 else if (filter.values && (filter.values.greaterThan != undefined)) {
-                  var value = feature.properties_[filter.field];
+                  let value = feature.properties_[filter.field];
 
                   allMet = allMet && (value >= filter.values.greaterThan) && (value < filter.values.lessThan);
                 }
@@ -83,7 +83,7 @@ let _filterEngine = (source) => {
           }
 
           if (value.filter.any) {
-            var allMet = false;
+            let allMet = false;
             value.filter.any.forEach(filter => {
               if (!feature || !feature.properties_) {
               }
@@ -92,7 +92,7 @@ let _filterEngine = (source) => {
                   allMet = allMet || (feature.properties_[filter.field] + "") == filter.values.exact;
                 }
                 else if (filter.values && (filter.values.greaterThan != undefined)) {
-                  var value = feature.properties_[filter.field];
+                  let value = feature.properties_[filter.field];
 
                   allMet = allMet || (value >= filter.values.greaterThan) && (value < filter.values.lessThan);
                 }
@@ -122,7 +122,7 @@ let _filterEngine = (source) => {
         });
 
 
-        var renderThisFeature = false || source.filter[key].values.length == 0;
+        let renderThisFeature = false || source.filter[key].values.length == 0;
 
         if (source.filter[key].mode == "OR") {
           valuesMet.forEach(value => {
@@ -131,7 +131,7 @@ let _filterEngine = (source) => {
         }
 
         if (source.filter[key].mode == "AND") {
-          var renderThisFeature = true;
+          let renderThisFeature = true;
           valuesMet.forEach(value => {
             renderThisFeature = renderThisFeature && value;
           })
@@ -164,11 +164,11 @@ let _filterEngine = (source) => {
         render = false;
       }
 
-      for (var i = 0; i < filterSets.length; i++) {
-        var filterSet = flt[filterSets[i]];
+      for (let i = 0; i < filterSets.length; i++) {
+        let filterSet = flt[filterSets[i]];
 
-        var match = false; // || filterSet.values.length == 0;
-        var orMode = true;
+        let match = false; // || filterSet.values.length == 0;
+        let orMode = true;
 
         if (filterSet.mode == "AND") {
           match = true;
@@ -176,14 +176,14 @@ let _filterEngine = (source) => {
         }
 
 
-        for (var t = 0; t < filterSet.values.length; t++) {
-          var value = filterSet.values[t];
-          var fc = fev.filtersChecked[filterSets[i]]
+        for (let t = 0; t < filterSet.values.length; t++) {
+          let value = filterSet.values[t];
+          let fc = fev.filtersChecked[filterSets[i]]
           if (!fc) {
             debugger;
             //We gonna crash ... why ...
           }
-          var condVal = fc[value.name]
+          let condVal = fc[value.name]
 
           if (value.applied) {
             if (orMode) {
@@ -226,41 +226,6 @@ let _filterEngine = (source) => {
   };
 }
 
-const getLegend_ = (endpoint) => {
-  let legend = [];
-  if (endpoint.style) {
-    // Create legend entries based on the style
-    let style = endpoint.style;
-
-    if (style.dynamic) {
-      let mapping = style.dynamic.map;
-      let keys = Object.keys(mapping);
-      for (const element of keys) {
-        let entry = {
-          label: mapping[element].label || element,
-          color: mapping[element].fillColor
-        };
-        legend.push(entry);
-      }
-
-    } else if (style.static) {
-      // TODO: Handle all of our style methods such as image, pattern, etc.
-      let entry = {
-        label: style.static.label || "",
-        color: style.static.fillColor
-      };
-      legend.push(entry);
-    }
-
-  }
-
-  return async () => {
-    return legend;
-  }
-}
-
-
-
 
 let _applyFilters = (source, vtLayer) => {
   //TODO: Can we interpret vtLayer or source based off the other?
@@ -277,13 +242,13 @@ let _applyFilters = (source, vtLayer) => {
 
     source.filterMode = layerset.mode;
 
-    var epk = Object.keys(source.filter)
+    let epk = Object.keys(source.filter)
 
-    var anyApplied = false;
+    let anyApplied = false;
 
-    for (var i = 0; i < epk.length && !anyApplied; i++) {
-      var f = source.filter[epk[i]];
-      for (var v = 0; v < f.values.length && !anyApplied; v++) {
+    for (let i = 0; i < epk.length && !anyApplied; i++) {
+      let f = source.filter[epk[i]];
+      for (let v = 0; v < f.values.length && !anyApplied; v++) {
         anyApplied = anyApplied || f.values[v].applied
       }
     }
@@ -461,9 +426,9 @@ let _deduplicateFeatures = (features) => {
     rets[feat.getId() + ""] = feat;
   });
 
-  var keys = Object.keys(rets);
+  let keys = Object.keys(rets);
 
-  var ret = [];
+  let ret = [];
 
   keys.forEach(key => {
     ret.push(rets[key]);
@@ -645,10 +610,10 @@ let handlePostRender = (source, vtLayer) => {
 }
 
 export const generate = (data, core) => {
-  var layers = data.config.value.endpoints.map(endpoint => {
-    var url = endpoint.url;
+  let layers = data.config.value.endpoints.map(endpoint => {
+    let url = endpoint.url;
 
-    var source = new VectorTileSource({
+    let source = new VectorTileSource({
       maxZoom: 15,
       format: new MVT({
         idProperty: 'id'
@@ -658,12 +623,12 @@ export const generate = (data, core) => {
     });
 
     if (endpoint.headers) {
-      var loader = _loader(endpoint);
+      let loader = _loader(endpoint);
 
       source.setTileLoadFunction(loader);
     }
 
-    var vtLayer = new VectorTileLayer({
+    let vtLayer = new VectorTileLayer({
       declutter: data.config.value.declutter === true,
       source: source,
       zIndex: endpoint.zIndex || 1000,
@@ -673,6 +638,7 @@ export const generate = (data, core) => {
     vtLayer.moo = moo;
     vtLayer.style = moo.getStyle;
     vtLayer.setStyle(moo.getStyle)
+    vtLayer.getLegend = async () => { return moo.getLegend };
 
     vtLayer.set('id', data.key);
 
@@ -696,7 +662,7 @@ export const generate = (data, core) => {
 
     vtLayer.getFeaturesUnderPixel = _getFeaturesUnderPixel(vtLayer, endpoint, core.getMap());
 
-    vtLayer.getLegend = getLegend_(endpoint);
+    //vtLayer.getLegend = getLegend_(endpoint);
 
     if (endpoint.hasOwnProperty("zoom") && endpoint.zoom.hasOwnProperty("min")) {
       console.log("Setting min zoom", endpoint.zoom.min);
@@ -771,8 +737,17 @@ export const generate = (data, core) => {
       vtLayer = group;
     }
 
+    
+
     return vtLayer;
   });
 
+  // Determine if any of the layers has a legend
+  let hasLegend = layers.some(layer => {
+    return layer.getLegend() !== null;
+  });
+
+  // If we have a legend, create a legend control
+    
   return layers;
 }

@@ -355,8 +355,9 @@ export default class Themes {
         let selectedLayers = categoryGroup.getSelectedLayers();
         let promises = selectedLayers
           .filter(lyr => lyr.getLegend)
-          .map(layer => {
-            return layer.getLegend();
+          .map(async layer => {
+            let legend = await layer.getLegend();
+            return { key: layer.key, legend: legend };
           });
         let results = await Promise.all(promises);
         let legends = results.filter(result => result != null);

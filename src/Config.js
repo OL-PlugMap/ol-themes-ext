@@ -184,7 +184,8 @@ export function convertConfig(config) {
                     selection_keys: [...category.defaultSelection] || []
                 },
                 opacity: !isNaN(category.opacity) ? category.opacity : !isNaN(category.transparency) ? category.transparency : 1,
-                crossfade: processCrossfade(category.crossfade)
+                crossfade: processCrossfade(category.crossfade),
+                legend: category.legend || { enabled: true },
             }
 
             if(!category.layerGroups)

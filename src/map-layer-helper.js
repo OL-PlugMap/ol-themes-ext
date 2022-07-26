@@ -348,6 +348,22 @@ export default class Themes {
       return features;
     }
 
+    if(categoryGroup.config?.legend?.enabled === false) {
+      categoryGroup.getLegend = async () => { return null };
+    } else {
+      categoryGroup.getLegend = async () => {
+        let selectedLayers = categoryGroup.getSelectedLayers();
+        let promises = selectedLayers
+          .filter(lyr => lyr.getLegend)
+          .map(layer => {
+            return layer.getLegend();
+          });
+        let results = await Promise.all(promises);
+        let legends = results.filter(result => result != null);
+        return legends;
+      }
+    }
+
     return categoryGroup;
   }
 
@@ -642,7 +658,7 @@ export default class Themes {
 
     if (!layer.getLegend) {
       layer.getLegend = async function () {
-        return [{ value: "Not Implemented" }];
+        return null; //[{ value: "Not Implemented" }];
       }
     }
 
@@ -745,7 +761,7 @@ export default class Themes {
     }
     else {
       group.getLegend = async () => {
-        return [{ value: "Not Implemented" }];
+        return null; // [{ value: "Not Implemented" }];
       }
     }
 

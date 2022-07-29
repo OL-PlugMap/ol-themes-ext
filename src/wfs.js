@@ -11,6 +11,7 @@ import { tile as tileStrategy } from "ol/loadingstrategy";
 import { createXYZ } from "ol/tilegrid";
 
 import { Style, Fill, Stroke } from 'ol/style';
+import * as identifyUtils from './identifyUtils'
 
 /*
 *  Patch because WMSServerType is not available in 6.15 anymore

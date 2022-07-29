@@ -15,6 +15,8 @@ import { _buildEngine } from './filterEngine'
 
 import TileState from 'ol/TileState'
 
+import * as identifyUtils from './identifyUtils'
+
 let _filterEngine = (source) => {
   (feature) => {
     getLogger()("Filter Engine Old");
@@ -438,9 +440,9 @@ let _deduplicateFeatures = (features) => {
 };
 
 let _getFeaturesInView = (vtLayer, endpoint, map) => {
-
   if (endpoint.identify) {
-    return identifyUtils.getFeaturesInView(vtLayer, endpoint, map);
+    let idt = identifyUtils.getFeaturesInView(vtLayer, endpoint, map);
+    return idt;
   }
 
   if (endpoint.hasOwnProperty("zoom") && endpoint.zoom.hasOwnProperty("min")) {
@@ -467,6 +469,11 @@ let _getFeaturesInView = (vtLayer, endpoint, map) => {
   }
 };
 
+let _getLoadingPromise = (vtLayer) => {
+  return () => {
+    return getLoadingPromise(vtLayer);
+  }
+}
 
 let getLoadingPromise = (vtLayer) => {
   let resolve_, reject_ = null;
@@ -657,6 +664,8 @@ export const generate = (data, core) => {
     vtLayer.clearFilters = _clearFilters(source);
 
     vtLayer.filterEngine = _filterEngine(source);
+
+    vtLayer.getLoadingPromise = _getLoadingPromise(vtLayer);
 
     vtLayer.getFeaturesInView = _getFeaturesInView(vtLayer, endpoint, core.getMap())
 

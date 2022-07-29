@@ -40,26 +40,47 @@ const featureMassage = (feature, dataMappingSettings) => {
     }
 }
 
+
+const _deduplicateFeatures = (features) => {
+    let rets = {};
+  
+    features.forEach((feat) => {
+      rets[feat.getId() + ""] = feat;
+    });
+  
+    let keys = Object.keys(rets);
+  
+    let ret = [];
+  
+    keys.forEach(key => {
+      ret.push(rets[key]);
+    });
+  
+    return ret;
+  };
+
+
 // TODO: Write this to be less hacky.
 export const getFeaturesInView = (layer, endpoint, map) => {
 
-    if (endpoint.hasOwnProperty("zoom") && endpoint.zoom.hasOwnProperty("min")) {
-        if (map.getView().getZoom() < endpoint.zoom.min) {
-            return null;
-        }
-    }
 
-    if (endpoint.hasOwnProperty("zoom") && endpoint.zoom.hasOwnProperty("max")) {
-        if (map.getView().getZoom() > endpoint.zoom.max) {
-            return null;
-        }
-    }
     if (!endpoint.identify) {
         return null
     }
 
     return async () => {
 
+        if (endpoint.hasOwnProperty("zoom") && endpoint.zoom.hasOwnProperty("min")) {
+            if (map.getView().getZoom() < endpoint.zoom.min) {
+                return null;
+            }
+        }
+
+        if (endpoint.hasOwnProperty("zoom") && endpoint.zoom.hasOwnProperty("max")) {
+            if (map.getView().getZoom() > endpoint.zoom.max) {
+                return null;
+            }
+        }
         let ident = endpoint.identify;
         if (ident.wfs) {
 
@@ -122,6 +143,57 @@ export const getFeaturesInView = (layer, endpoint, map) => {
             }
 
             return features;
+        } else {
+
+
+            if (layer.getLoadingPromise) {
+
+                return layer.getLoadingPromise().then(async () => {
+                    let features = layer.getSource().getFeaturesInExtent(map.getView().calculateExtent());
+
+
+                    if (features.type === "FeatureCollection") {
+                        for (let feature of features.features) {
+                            featureMassage(feature, endpoint.identify.dataMappingSettings);
+                        }
+                    } else if (Array.isArray(features)) {
+                        features = _deduplicateFeatures(features);
+                        for (let feature of features) {
+                            if(!feature.hasOwnProperty("properties") && feature.hasOwnProperty("properties_")) {
+                                feature.properties = feature.properties_;
+                            }
+                            if(ident.dataMappingSettings) {
+                                featureMassage(feature, ident.dataMappingSettings);
+                            }
+                        }
+                        // Convert it into a featurecollection
+                        let featureCollection = {
+                            type: "FeatureCollection",
+                            features: features
+                        };
+                        features = featureCollection;
+                    } else { // If the response is a feature, apply the data mapping settings to the feature
+                        featureMassage(features, endpoint.identify.dataMappingSettings);
+                    }
+
+                    return features;
+                });
+            } else {
+                let features = layer.getSource().getFeaturesInExtent(map.getView().calculateExtent());
+
+                features = _deduplicateFeatures(features);
+
+                if (features.type === "FeatureCollection") {
+                    for (let feature of features.features) {
+                        featureMassage(feature, endpoint.identify.dataMappingSettings);
+                    }
+                } else { // If the response is a feature, apply the data mapping settings to the feature
+                    featureMassage(features, endpoint.identify.dataMappingSettings);
+                }
+
+                return features;
+            }
+
         }
 
 

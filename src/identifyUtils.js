@@ -43,21 +43,21 @@ const featureMassage = (feature, dataMappingSettings) => {
 
 const _deduplicateFeatures = (features) => {
     let rets = {};
-  
+
     features.forEach((feat) => {
-      rets[feat.getId() + ""] = feat;
+        rets[feat.getId() + ""] = feat;
     });
-  
+
     let keys = Object.keys(rets);
-  
+
     let ret = [];
-  
+
     keys.forEach(key => {
-      ret.push(rets[key]);
+        ret.push(rets[key]);
     });
-  
+
     return ret;
-  };
+};
 
 
 // TODO: Write this to be less hacky.
@@ -159,10 +159,10 @@ export const getFeaturesInView = (layer, endpoint, map) => {
                     } else if (Array.isArray(features)) {
                         features = _deduplicateFeatures(features);
                         for (let feature of features) {
-                            if(!feature.hasOwnProperty("properties") && feature.hasOwnProperty("properties_")) {
+                            if (!feature.hasOwnProperty("properties") && feature.hasOwnProperty("properties_")) {
                                 feature.properties = feature.properties_;
                             }
-                            if(ident.dataMappingSettings) {
+                            if (ident.dataMappingSettings) {
                                 featureMassage(feature, ident.dataMappingSettings);
                             }
                         }
@@ -267,14 +267,23 @@ export const getFeaturesUnderPixel = (layer, endpoint, map) => {
 
                 return features;
             } else {
-
+                let zoom = map.getView().getZoom();
+                let buf = (12 - (zoom)) / 1000000;
+                if (buf <= 0) buf = 1/1000000;
+                let ext = [coords[0] - buf, coords[1] - buf, coords[0] + buf, coords[1] + buf];
+                //console.log("Zoom", zoom, "buf", buf, "ext", ext);
 
                 if (layer.getLoadingPromise) {
-    
+
                     return layer.getLoadingPromise().then(async () => {
-                        let features = layer.getSource().getFeaturesAtCoordinate(coords); //.getFeaturesInExtent(map.getView().calculateExtent());
-    
-    
+                        let features = [];
+                        if (layer.getSource().getFeaturesAtCoordinate) {
+                            features = layer.getSource().getFeaturesAtCoordinate(coords);
+                        } else {
+                            features = layer.getSource().getFeaturesInExtent(ext);
+                        }
+
+
                         if (features.type === "FeatureCollection") {
                             for (let feature of features.features) {
                                 featureMassage(feature, endpoint.identify.dataMappingSettings);
@@ -282,10 +291,10 @@ export const getFeaturesUnderPixel = (layer, endpoint, map) => {
                         } else if (Array.isArray(features)) {
                             features = _deduplicateFeatures(features);
                             for (let feature of features) {
-                                if(!feature.hasOwnProperty("properties") && feature.hasOwnProperty("properties_")) {
+                                if (!feature.hasOwnProperty("properties") && feature.hasOwnProperty("properties_")) {
                                     feature.properties = feature.properties_;
                                 }
-                                if(ident.dataMappingSettings) {
+                                if (ident.dataMappingSettings) {
                                     featureMassage(feature, ident.dataMappingSettings);
                                 }
                             }
@@ -298,14 +307,19 @@ export const getFeaturesUnderPixel = (layer, endpoint, map) => {
                         } else { // If the response is a feature, apply the data mapping settings to the feature
                             featureMassage(features, endpoint.identify.dataMappingSettings);
                         }
-    
+
                         return features;
                     });
                 } else {
-                    let features = layer.getSource().getFeaturesAtCoordinate(coords); //.getFeaturesInExtent(map.getView().calculateExtent());
-    
+                    let features = [];
+                    if (layer.getSource().getFeaturesAtCoordinate) {
+                        features = layer.getSource().getFeaturesAtCoordinate(coords);
+                    } else {s
+                        features = layer.getSource().getFeaturesInExtent(ext);
+                    }
+
                     features = _deduplicateFeatures(features);
-    
+
                     if (features.type === "FeatureCollection") {
                         for (let feature of features.features) {
                             featureMassage(feature, endpoint.identify.dataMappingSettings);
@@ -313,10 +327,10 @@ export const getFeaturesUnderPixel = (layer, endpoint, map) => {
                     } else { // If the response is a feature, apply the data mapping settings to the feature
                         featureMassage(features, endpoint.identify.dataMappingSettings);
                     }
-    
+
                     return features;
                 }
-    
+
             }
         }
 

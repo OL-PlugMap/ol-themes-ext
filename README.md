@@ -183,6 +183,8 @@ window.map.themes.getCategoryByKey("cat_test").getLayerByKey("lyr_test").filter.
 
 ---
 ## Changelog
+- 0.1.22
+    - Better support for identify functions in vector layers
 - 0.1.19
     - Better support for legend in vector layers with a custom style defined
     - Update to ol 6.15.1

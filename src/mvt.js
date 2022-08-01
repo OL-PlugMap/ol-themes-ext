@@ -441,8 +441,7 @@ let _deduplicateFeatures = (features) => {
 
 let _getFeaturesInView = (vtLayer, endpoint, map) => {
   if (endpoint.identify) {
-    let idt = identifyUtils.getFeaturesInView(vtLayer, endpoint, map);
-    return idt;
+    return identifyUtils.getFeaturesInView(vtLayer, endpoint, map);
   }
 
   if (endpoint.hasOwnProperty("zoom") && endpoint.zoom.hasOwnProperty("min")) {

@@ -100,7 +100,7 @@ class ConfigurableStyleEngine {
       let field = endpoint.style.dynamic.field;
 
       if (!renderFeature) {
-        return invisibleStyle;
+        return that.invisibleStyle;
       } else if (feature.get("selected")) {
         return selectedStyle;
       } else if (feature && ((feature.properties_ && feature.properties_[field] !== undefined) || feature.get && feature.get(field))) {

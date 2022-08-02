@@ -53,6 +53,72 @@ export const _buildEngine = (source,vtLayer) => {
             source.changed();
             return _buildEngine(source, vtLayer);              
           },
+          inRangeInclusive: (min, max) => {
+            source.filterSet.values[field] = { inRangeInclusive: true, values: [min, max] };
+            getLogger()(source.filterSet);
+            source.changed();
+            return _buildEngine(source, vtLayer);
+          },
+          inRangeExclusive: (min, max) => {
+            source.filterSet.values[field] = { inRangeExclusive: true, values: [min, max] };
+            getLogger()(source.filterSet);
+            source.changed();
+            return _buildEngine(source, vtLayer);
+          },
+          isGreaterThan: (value) => {
+            source.filterSet.values[field] = { isGreaterThan: true, values: [value] };
+            getLogger()(source.filterSet);
+            source.changed();
+            return _buildEngine(source, vtLayer);
+          },
+          isLessThan: (value) => {
+            source.filterSet.values[field] = { isLessThan: true, values: [value] };
+            getLogger()(source.filterSet);
+            source.changed();
+            return _buildEngine(source, vtLayer);
+          },
+          isGreaterThanOrEqualTo: (value) => {
+            source.filterSet.values[field] = { isGreaterThanOrEqualTo: true, values: [value] };
+            getLogger()(source.filterSet);
+            source.changed();
+            return _buildEngine(source, vtLayer);
+          },
+          isLessThanOrEqualTo: (value) => {
+            source.filterSet.values[field] = { isLessThanOrEqualTo: true, values: [value] };
+            getLogger()(source.filterSet);
+            source.changed();
+            return _buildEngine(source, vtLayer);
+          },
+          isNot: (value) => {
+            source.filterSet.values[field] = { isNot: true, values: value };
+            getLogger()(source.filterSet);
+            source.changed();
+            return _buildEngine(source, vtLayer);
+          },
+          isNotAny: (values) => {
+            source.filterSet.values[field] = { isNotAny: true, values: values };
+            getLogger()(source.filterSet);
+            source.changed();
+            return _buildEngine(source, vtLayer);
+          },
+          isNotAll: (values) => {
+            source.filterSet.values[field] = { isNotAll: true, values: values };
+            getLogger()(source.filterSet);
+            source.changed();
+            return _buildEngine(source, vtLayer);
+          },
+          isNull: () => {
+            source.filterSet.values[field] = { isNull: true };
+            getLogger()(source.filterSet);
+            source.changed();
+            return _buildEngine(source, vtLayer);
+          },
+          isNotNull: () => {
+            source.filterSet.values[field] = { isNotNull: true };
+            getLogger()(source.filterSet);
+            source.changed();
+            return _buildEngine(source, vtLayer);
+          },
           clear : () => {
             delete source.filterSet.values[field];
             getLogger()(source.filterSet);
@@ -116,15 +182,15 @@ export const _checkFilter = (source, feature) => {
                 filterMatch = true;
               else if(filter.all) {
                 filterMatch = true;
-                for(let value of filter.values)
-                    filterMatch = filterMatch && valueToTest == value;
+                for(let val of filter.values)
+                    filterMatch = filterMatch && valueToTest == val;
               }
               else if(filter.contains && (valueToTest+"").indexOf(filter.values) >= 0)
                   filterMatch = true;
               else if(filter.containsAny) {
                 filterMatch = false || filter.values.length == 0;
-                for(let value of filter.values) {
-                  if ((valueToTest+"").indexOf(value) >= 0) {
+                for(let val of filter.values) {
+                  if ((valueToTest+"").indexOf(val) >= 0) {
                       filterMatch = true;
                       break;
                   }
@@ -132,8 +198,8 @@ export const _checkFilter = (source, feature) => {
               }
               else if(filter.containsAll) {
                   filtermatch = true;
-                  for(let value of filter.values) {
-                    if(((valueToTest+"").indexOf(value) < 0)) {
+                  for(let val of filter.values) {
+                    if(((valueToTest+"").indexOf(val) < 0)) {
                       filterMatch = false;
                       break;
                     }
@@ -142,6 +208,45 @@ export const _checkFilter = (source, feature) => {
               else if(filter.exactly && valueToTest == filter.values) {
                 filterMatch = true;
               }
+              else if(filter.inRangeInclusive) {
+                let [min, max] = filter.values;
+                filterMatch = valueToTest >= min && valueToTest <= max;
+              }
+              else if(filter.inRangeExclusive) {
+                let [min, max] = filter.values;
+                filterMatch = valueToTest > min && valueToTest < max;
+              }
+              else if(filter.isGreaterThan) {
+                let [min] = filter.values;
+                filterMatch = valueToTest > min;
+              }
+              else if(filter.isLessThan) {
+                let [max] = filter.values;
+                filterMatch = valueToTest < max;
+              }
+              else if(filter.isGreaterThanOrEqualTo) {
+                let [min] = filter.values;
+                filterMatch = valueToTest >= min;
+              }
+              else if(filter.isLessThanOrEqualTo) {
+                let [max] = filter.values;
+                filterMatch = valueToTest <= max;
+              }
+              else if(filter.isNot) {
+                filterMatch = valueToTest != filter.values;
+              }
+              else if(filter.isNotAny) {
+                filterMatch = !filter.values.includes(valueToTest);
+              }
+              else if(filter.isNotAll) {
+                filterMatch = filter.values.includes(valueToTest);
+              }
+              else if(filter.isNull) {
+                filterMatch = valueToTest == null;
+              }
+              else if(filter.isNotNull) {
+                filterMatch = valueToTest != null;
+              }             
           }
           else
           {

@@ -17,7 +17,7 @@ import { _buildEngine } from './filterEngine'
 export const generate = (data, core) => {
   let layers = data.config.value.endpoints.map(endpoint => {
     //The random adds a random value to the parameter
-    //essentually cache busting  
+    //essentially cache busting
     let customParams = {
       get random() {
         return Math.random();

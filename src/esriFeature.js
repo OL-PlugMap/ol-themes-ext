@@ -10,15 +10,14 @@ import { get } from "ol/proj";
 import { getWidth } from "ol/extent";
 import {tile as tileStrategy} from 'ol/loadingstrategy';
 import { getLogger, getWarning } from "./logger";
-import { createStyleFunction, setMapProjection, readEsriStyleDefinitions } from 'ol-esri-style';
-
+import { createStyleFunction, readEsriStyleDefinitions } from 'ol-esri-style';
 
 const esrijsonFormat = new EsriJSON();
 
 export const generate = (data, core) => {
     let layers = data.config.value.endpoints.map(endpoint => {
     //The random adds a random value to the parameter
-    //essentually cache busting  
+    //essentially cache busting
     let customParams = {
       get random() {
         return Math.random();
@@ -97,9 +96,7 @@ export const generate = (data, core) => {
         try
         {
           getLogger()("Style", meta);
-          setMapProjection(core.getMap().getView().getProjection());
-          
-          createStyleFunction(meta).then(styleFunction => {
+          createStyleFunction(meta, core.getMap().getView().getProjection()).then(styleFunction => {
             getLogger()("Debug stuff here");
             endpoint.styleFunction = (feature, resolution) => {
               getLogger()(feature);
@@ -145,7 +142,7 @@ export const generate = (data, core) => {
           getLogger()("Setting FN");
           endpoint.layerRef.setStyle(endpoint.styleFunction);
         }
-        
+
         // var rend = (meta && meta.drawingInfo ? meta.drawingInfo.renderer : {}) || {} ;
         // if(!rend)
         // {
@@ -189,14 +186,14 @@ export const generate = (data, core) => {
 
         // }
 
-        
+
       })
       .catch(a => {
           getWarning()("Unable to get style from provided URL", endpoint.url, a. endpoint)
           endpoint.styleCache = false;
       });
 
-    
+
 
     let source = new VectorSource({
       loader: function (extent, resolution, projection) {
@@ -272,7 +269,7 @@ export const generate = (data, core) => {
             let val = {
               label: entry.title,
             }
-            
+
             if(entry.fill && entry.fill.color)
             {
               val.color = entry.fill.color;

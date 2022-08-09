@@ -18,10 +18,12 @@ export default class ol_themes_ext {
         this.crossfadeHooks = [];
         this.crossfadespeed = 50; // 1/20th of a second
 
-        if(!window.themesMap)
-            window.themesMap = {};
+        if(process?.env?.NODE_ENV === 'development') {
+            if(!window.themesMap)
+                window.themesMap = {};
 
-        window.themesMap[map.ol_uid] = this;
+            window.themesMap[map.ol_uid] = this;
+        }
         
         return map;
 

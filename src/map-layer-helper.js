@@ -11,6 +11,8 @@ import * as xyz from './xyz'
 
 import { getLogger } from './logger'
 
+import { applyToGroup } from './filterEngine'
+
 const mapboxBaseUrl = 'https://api.mapbox.com';
 
 /**
@@ -774,20 +776,14 @@ export default class Themes {
     }
 
     if (hasFilter) {
-      group.filter = async (filter) => {
-        layers.forEach(async layer => {
-          if (layer.filter) {
-            await layer.filter(filter);
-          }
-        });
-      }
+      group.filter = applyToGroup(group);
     }
     else {
       group.filter = async (filter) => {
         console.log("No filter for group", group);
       }
     }
-    
+
 
     return group;
   }

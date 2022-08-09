@@ -702,6 +702,13 @@ export default class Themes {
       }
     });
 
+    let hasFilter = false;
+    layers.forEach(layer => {
+      if (layer.filter) {
+        hasFilter = true;
+      }
+    });
+
     if (hasAGetFeaturesInView) {
       group.getFeaturesInView = async () => {
         console.log("Getting features in view for group", group);
@@ -765,6 +772,22 @@ export default class Themes {
         return null; // [{ value: "Not Implemented" }];
       }
     }
+
+    if (hasFilter) {
+      group.filter = async (filter) => {
+        layers.forEach(async layer => {
+          if (layer.filter) {
+            await layer.filter(filter);
+          }
+        });
+      }
+    }
+    else {
+      group.filter = async (filter) => {
+        console.log("No filter for group", group);
+      }
+    }
+    
 
     return group;
   }

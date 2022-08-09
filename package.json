@@ -43,9 +43,8 @@
     "node-fetch": "^3.2.10",
     "ol": "^6.15.1",
     "promise": "^8.1.0",
-    "react-dev-utils": "^11.0.4",
-    "webpack": "^5.74.0",
-    "webpack-manifest-plugin": "^5.0.0"
+    "react-dev-utils": "^12.0.1",
+    "webpack": "^5.74.0"
   },
   "babel": {
     "presets": [

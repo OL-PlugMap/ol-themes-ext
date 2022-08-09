@@ -1,16 +1,14 @@
 
-import TileGrid from "ol/tilegrid/TileGrid"
 import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
 import {createXYZ} from 'ol/tilegrid';
-import { Fill, Stroke, Style, CircleStyle } from 'ol/style';
-import { applyStyle } from 'ol-mapbox-style';
+import { Fill, Stroke, Style} from 'ol/style';
 import EsriJSON from 'ol/format/EsriJSON';
-import { get } from "ol/proj";
-import { getWidth } from "ol/extent";
 import {tile as tileStrategy} from 'ol/loadingstrategy';
 import { getLogger, getWarning } from "./logger";
 import { createStyleFunction, readEsriStyleDefinitions } from 'ol-esri-style';
+//import { ConfigurableStyle } from './vectorStyles'
+
 
 const esrijsonFormat = new EsriJSON();
 
@@ -36,20 +34,8 @@ export const generate = (data, core) => {
       customParams["layerDefs"] = data.config.value.layerDefs
     }
 
-    var projExtent = get('EPSG:3857').getExtent();
-    var startResolution = getWidth(projExtent) / 256;
-    var resolutions = new Array(22);
-    for (var i = 0, ii = resolutions.length; i < ii; ++i) {
-      resolutions[i] = startResolution / Math.pow(2, i);
-    }
-    var tileGrid = new TileGrid({
-      extent: [-13884991, 2870341, -7455066, 6338219],
-      resolutions: resolutions,
-      tileSize: [256, 256]
-    });
-
-
     endpoint.styleCache = {};
+    //TODO: Use the configurable style function to create the style function
     endpoint.styleFunction = function(feature)
     {
       if(!endpoint.styleCache)
@@ -105,7 +91,7 @@ export const generate = (data, core) => {
 
             getLogger()("Setting FN");
             endpoint.layerRef.setStyle(endpoint.styleFunction);
-          })
+          }, core.getMap().getView().getProjection())
           .catch((err) => {
             getLogger()("Catch", err);
             endpoint.styleFunction = (feature) => {
@@ -142,49 +128,7 @@ export const generate = (data, core) => {
           getLogger()("Setting FN");
           endpoint.layerRef.setStyle(endpoint.styleFunction);
         }
-
-        // var rend = (meta && meta.drawingInfo ? meta.drawingInfo.renderer : {}) || {} ;
-        // if(!rend)
-        // {
-        //   getWarning()("The included service didnt have drawing info. This can happen if you dont pass in the layer with the url. For example: somedomain.com/somepath/FeatureServer/0/");
-        //   endpoint.styleCache = false;
-        //   return;
-        // }
-
-        // let rendererType = rend.type;
-
-        // switch(rendererType)
-        // {
-        //   case "uniqueValue": {
-        //     getLogger()("Found a unique value renderer");
-        //     if(rend.field2)
-        //     {
-        //       getWarning()("This renderer has multiple fields. Currently only the first field is supported, the rest are ignored. Please open an issue on this library with the following values.", endpoint, rend);
-        //     }
-        //     var field = rend.field1;
-        //     endpoint.styleCache.field = field;
-        //     endpoint.styleCache.map = {};
-        //     for(var inf of rend.uniqueValueInfos)
-        //     {
-        //       var sym = inf.symbol;
-        //       endpoint.styleCache.map[inf.value] =
-        //         new Style({
-        //           fill: new Fill({
-        //             color: `rgba(${sym.color[0]},${sym.color[1]},${sym.color[2]},${sym.color[3]/255})`
-        //           }),
-        //           stroke: new Stroke({
-        //             color: `rgba(${sym.outline.color[0]},${sym.outline.color[1]},${sym.outline.color[2]},${sym.outline.color[3]/255})`,
-        //             width: sym.outline.width || 4
-        //           })
-        //         })
-        //     }
-        //   }; break;
-
-        //   default: {
-        //     getWarning()("Unsupported renderer detected. Please open an issue on this library with the following value.", endpoint, rend)
-        //   }; break;
-
-        // }
+        
 
 
       })
@@ -198,7 +142,7 @@ export const generate = (data, core) => {
     let source = new VectorSource({
       loader: function (extent, resolution, projection) {
         let outfields = endpoint.outfields ? endpoint.outfields.join(",") : "*";
-        var url =
+        let url =
           endpoint.url +
           '/query/?f=json&' +
           'returnGeometry=true&spatialRel=esriSpatialRelIntersects&geometry=' +
@@ -218,7 +162,7 @@ export const generate = (data, core) => {
         window.fetch(url)
         .then((response) => { return response.text() })
         .then((txt) => {
-              var features = esrijsonFormat.readFeatures(txt, {
+              let features = esrijsonFormat.readFeatures(txt, {
                 featureProjection: projection,
               });
               if (features.length > 0) {
@@ -293,11 +237,11 @@ export const generate = (data, core) => {
           ls = ls.filts;
         ls.forEach(layer => {
 
-          var def = {};
-          var conditions = [];
+          let def = {};
+          let conditions = [];
           layer.values.forEach(value => {
             if (value.applied && value.filter && value.filter.all && value.filter.all.length > 0) {
-              var indiConds = [];
+              let indiConds = [];
               value.filter.all.forEach(condition => {
 
                 if (condition.values.exact) {
@@ -308,12 +252,12 @@ export const generate = (data, core) => {
 
               })
 
-              var finalCond = "(" + indiConds.join(" AND ") + ")";
+              let finalCond = "(" + indiConds.join(" AND ") + ")";
               conditions.push(finalCond);
             }
           });
 
-          var finalFilter = "";
+          let finalFilter = "";
           switch (layer.mode) {
             case "OR": finalFilter = conditions.join(" OR "); break;
             case "AND": finalFilter = conditions.join(" AND "); break;
@@ -349,7 +293,7 @@ export const generate = (data, core) => {
 
     source.clearFilters =
       function (layer) {
-        var def = {};
+        let def = {};
         def[layer.layerid] = "0=1";
         def = JSON.stringify(def);
 
@@ -367,40 +311,12 @@ export const generate = (data, core) => {
           this.changed();
         }
       }
-
-    let configureSource = function (tokenKey) {
-      if (core.services && core.services[tokenKey]) {
-        let tokenData = core.services[tokenKey];
-        source.setUrl(`${tokenData.baseUrl || ""}${endpoint.url}`);
-        if (tokenData.token) {
-          customParams["token"] = tokenData.token;
-        }
-        source.params_ = customParams;
-      }
-    }
-
-    // if (endpoint.tokenKey) {
-    //   // if the token data has already been fetched and stored in core.services
-    //   // go ahead and configure the source w/ the data, otherwise, postpone
-    //   // the configuration until `setServicesCmd` has been triggered
-    //   if (core.services && core.services[endpoint.tokenKey]) {
-    //     configureSource(endpoint.tokenKey);
-    //   } else {
-    //     self.pendingConfiguration.push({
-    //       name: data.key,
-    //       fn: configureSource,
-    //       params: [endpoint.tokenKey]
-    //     });
-    //   }
-    // }
-    // else {
-    //   source.setUrl(endpoint.url);
-    //   source.params_ = customParams;
-    // }
     lyr.setVisible(false);
     endpoint.layerRef = lyr;
     return lyr;
   });
+
+  let foo = layers.map(a=>a);
 
   return layers;
 };

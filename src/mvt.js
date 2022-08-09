@@ -429,7 +429,7 @@ export const generate = (data, core) => {
     });
 
     let moo = new ConfigurableStyle(endpoint, source, vtLayer);
-    vtLayer.moo = moo;
+    
     vtLayer.style = moo.getStyle;
     vtLayer.setStyle(moo.getStyle)
     vtLayer.getLegend = async () => { return moo.getLegend };
@@ -450,15 +450,13 @@ export const generate = (data, core) => {
 
     vtLayer.clearFilters = _clearFilters(source);
 
-    vtLayer.filterEngine = null; //_filterEngine(source);
+    vtLayer.filterEngine = null;
 
     vtLayer.getLoadingPromise = _getLoadingPromise(vtLayer);
 
     vtLayer.getFeaturesInView = _getFeaturesInView(vtLayer, endpoint, core.getMap())
 
     vtLayer.getFeaturesUnderPixel = _getFeaturesUnderPixel(vtLayer, endpoint, core.getMap());
-
-    //vtLayer.getLegend = getLegend_(endpoint);
 
     if (endpoint.hasOwnProperty("zoom") && endpoint.zoom.hasOwnProperty("min")) {
       console.log("Setting min zoom", endpoint.zoom.min);

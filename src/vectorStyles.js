@@ -6,21 +6,31 @@ import { _checkFilter } from './filterEngine'
 import { getLogger } from './logger'
 
 class ConfigurableStyleEngine {
-  constructor() {
+  constructor(endpoint) {
 
-    this.highlightStyleConf = {
-      fill: new Fill({ color: "rgba(255,255,100,0.7)" }),
-      stroke: new Stroke({ color: "rgba(255,255,0,1)", width: 1 }),
-      image: new CircleStyle({ radius: 10, stroke: new Stroke({ color: '#fff', }), fill: new Fill({ color: '#3399CC', }), }),
-      zIndex: 999
-    };
+
+    this.highlightStyleConf = null;
+
+    if (endpoint.style.highlight ) {
+      this.highlightStyleConf = this.convertToStyleConf(endpoint.style.highlight );
+      this.highlightStyleConf.zIndex = 999;
+    }
+    else {
+      
+      this.highlightStyleConf = {
+        fill: new Fill({ color: "rgba(255,255,100,0.7)" }),
+        stroke: new Stroke({ color: "rgba(255,255,0,1)", width: 1 }),
+        image: new CircleStyle({ radius: 10, stroke: new Stroke({ color: '#fff', }), fill: new Fill({ color: '#3399CC', }), }),
+        zIndex: 999
+      };
+    }
+
     this.invisibleStyleConf = {
       fill: new Fill({ color: "rgba(255,255,255,0.0)" }),
       stroke: new Stroke({ color: "rgba(255,255,255,0.0)", width: 1 }),
     }
 
     this.highlightStyle = new Style(this.highlightStyleConf);
-
 
     this.invisibleStyle = new Style(this.invisibleStyleConf);
 
@@ -321,26 +331,6 @@ class ConfigurableStyleEngine {
 
     this.style = this.endpoint.style.static;
 
-    this.highlightStyle = endpoint.style.highlight;
-
-    this.highlightStyleConf = null;
-
-    if (this.highlightStyle) {
-      this.highlightStyleConf = this.convertToStyleConf(this.highlightStyle);
-    }
-    else {
-      this.highlightStyleConf = {};
-
-      this.highlightStyleConf.fill = new Fill({ color: "rgba(255,255,100,0.7)" });
-      this.highlightStyleConf.stroke = new Stroke({ color: "rgba(255,255,0,1)", width: 1 });
-      this.highlightStyleConf.image = new CircleStyle({ radius: 10, stroke: new Stroke({ color: '#fff', }), fill: new Fill({ color: '#3399CC', }), });
-      this.highlightStyleConf.zIndex = 999;
-    }
-
-    this.endpoint.highlightStyle = this.highlightStyleConf;
-
-
-
     this.styleConf = this.convertToStyleConf(this.style);
 
 
@@ -464,7 +454,7 @@ export class ConfigurableStyle {
     this.getLegend = () => { console.log("Error parsing legend") };
 
     if (endpoint.style) {
-      let configurableStyleEngine = new ConfigurableStyleEngine();
+      let configurableStyleEngine = new ConfigurableStyleEngine(endpoint);
 
       if (endpoint.style.url) {
         this.getStyle = configurableStyleEngine.urlStyling(endpoint, source);

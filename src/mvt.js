@@ -83,7 +83,7 @@ let getId = (feature) => {
   if (isNaN(feature)) {
     getLogger()("Feature isnan", feature)
     if (feature.properties_) {
-      featureId = feature.get("iso_a3"); //TODO
+      featureId = feature.get("iso_a3") || feature.getId() || feature.id_;
       getLogger()("Got id", featureId)
     }
     else {

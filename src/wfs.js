@@ -237,6 +237,8 @@ export const generate = (layerConfig, core) => {
 
     lyr.getFeaturesUnderPixel = _getFeaturesUnderPixel(lyr, endpoint, core.getMap());
 
+    //lyr.onFeatureLoad = _onFeatureLoad(source);
+
     return lyr;
   });
 

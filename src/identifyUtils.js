@@ -68,7 +68,7 @@ export const getFeaturesInView = (layer, endpoint, map) => {
         return null
     }
 
-    return async () => {
+    return async (ignoreDeduplicate) => {
 
         if (endpoint.hasOwnProperty("zoom") && endpoint.zoom.hasOwnProperty("min")) {
             if (map.getView().getZoom() < endpoint.zoom.min) {
@@ -157,7 +157,8 @@ export const getFeaturesInView = (layer, endpoint, map) => {
                             featureMassage(feature, endpoint.identify.dataMappingSettings);
                         }
                     } else if (Array.isArray(features)) {
-                        features = _deduplicateFeatures(features);
+                        if(!ignoreDeduplicate)
+                            features = _deduplicateFeatures(features);
                         for (let feature of features) {
                             if (!feature.hasOwnProperty("properties") && feature.hasOwnProperty("properties_")) {
                                 feature.properties = feature.properties_;
@@ -181,7 +182,8 @@ export const getFeaturesInView = (layer, endpoint, map) => {
             } else {
                 let features = layer.getSource().getFeaturesInExtent(map.getView().calculateExtent());
 
-                features = _deduplicateFeatures(features);
+                if(!ignoreDeduplicate)
+                    features = _deduplicateFeatures(features);
 
                 if (features.type === "FeatureCollection") {
                     for (let feature of features.features) {
@@ -201,7 +203,7 @@ export const getFeaturesInView = (layer, endpoint, map) => {
 }
 
 export const getFeaturesUnderPixel = (layer, endpoint, map) => {
-    return async (pixel, event) => {
+    return async (pixel, ignoreDeduplicate) => {
         if (!pixel || !Array.isArray(pixel) || pixel.length != 2) {
             console.warn("Invalid parameter provided to getFeaturesUnderPixel. Expected an array with a length of 2. Got", pixel);
         }
@@ -289,7 +291,8 @@ export const getFeaturesUnderPixel = (layer, endpoint, map) => {
                                 featureMassage(feature, endpoint.identify.dataMappingSettings);
                             }
                         } else if (Array.isArray(features)) {
-                            features = _deduplicateFeatures(features);
+                            if(!ignoreDeduplicate)
+                                features = _deduplicateFeatures(features);
                             for (let feature of features) {
                                 if (!feature.hasOwnProperty("properties") && feature.hasOwnProperty("properties_")) {
                                     feature.properties = feature.properties_;
@@ -318,7 +321,8 @@ export const getFeaturesUnderPixel = (layer, endpoint, map) => {
                         features = layer.getSource().getFeaturesInExtent(ext);
                     }
 
-                    features = _deduplicateFeatures(features);
+                    if(!ignoreDeduplicate)
+                        features = _deduplicateFeatures(features);
 
                     if (features.type === "FeatureCollection") {
                         for (let feature of features.features) {

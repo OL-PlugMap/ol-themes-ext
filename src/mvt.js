@@ -208,6 +208,18 @@ let _loader = (endpoint) => {
   }
 }
 
+let _onFeatureLoad = (source) => {
+  return (featureFunction) => {
+    source.on('tileloadend', tileLoadInfo => {
+      try {
+        featureFunction(tileLoadInfo.tile.features_);
+      }
+      catch (e) {
+        getLogger()("Error in feature function", e);
+      }
+    });
+  }
+}
 
 let _deduplicateFeatures = (features) => {
   let rets = {};
@@ -457,6 +469,8 @@ export const generate = (data, core) => {
     vtLayer.getFeaturesInView = _getFeaturesInView(vtLayer, endpoint, core.getMap())
 
     vtLayer.getFeaturesUnderPixel = _getFeaturesUnderPixel(vtLayer, endpoint, core.getMap());
+    
+    vtLayer.onFeatureLoad = _onFeatureLoad(source);
 
     if (endpoint.hasOwnProperty("zoom") && endpoint.zoom.hasOwnProperty("min")) {
       console.log("Setting min zoom", endpoint.zoom.min);

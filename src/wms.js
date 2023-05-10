@@ -133,9 +133,9 @@ export const generate = (layerConfig, core) => {
         return lyr;
     });
 
-    layers.array.forEach(element => {
+    // layers.forEach(element => {
         
-    });
+    // });
 
     return layers;
 }

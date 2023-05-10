@@ -154,7 +154,7 @@ class ConfigurableStyleEngine {
     let styleConf = {};
 
     if (style.pattern) {
-      styleConf.fill = pattern(style);
+      styleConf.fill = this.pattern(style);
     } else if (style.fillColor) {
       styleConf.fill = new Fill({ color: style.fillColor || "rgba(255,0,0,0.5)" });
     }

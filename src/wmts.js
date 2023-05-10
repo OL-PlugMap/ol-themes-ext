@@ -91,7 +91,7 @@ export const generate = (layerConfig, core) => {
             sourceGridConf.matrixIds = endpoint.matrixIds;
         }
 
-        endpoint.tileGrid = new WMTSTileGrid(sourceGridConf);
+        sourceGridConf.tileGrid = new WMTSTileGrid(sourceGridConf);
 
         let source = new WMTS(sourceConf);
 

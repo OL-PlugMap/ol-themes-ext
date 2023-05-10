@@ -29,111 +29,12 @@ let _getFeaturesInView = (vtLayer, endpoint, map) => {
   if (endpoint.identify) {
     return identifyUtils.getFeaturesInView(vtLayer, endpoint, map);
   }
-
-  if (endpoint.hasOwnProperty("zoom") && endpoint.zoom.hasOwnProperty("min")) {
-      if (map.getView().getZoom() < endpoint.zoom.min) {
-          return null;
-      }
-  }
-
-  if (endpoint.hasOwnProperty("zoom") && endpoint.zoom.hasOwnProperty("max")) {
-      if (map.getView().getZoom() > endpoint.zoom.max) {
-          return null;
-      }
-  }
-
-  return async () => {
-    return getLoadingPromise(vtLayer).then(async () => {
-      let features = vtLayer.getSource().getFeaturesInExtent(map.getView().calculateExtent());
-
-      let ret = _deduplicateFeatures(features);
-
-      return ret;
-    });
-  }
 };
 
 let _getFeaturesUnderPixel = (vtLayer, endpoint, map) => {
 
   if (endpoint.identify) {
     return identifyUtils.getFeaturesUnderPixel(vtLayer, endpoint, map);
-  }
-
-  if (endpoint.hasOwnProperty("zoom") && endpoint.zoom.hasOwnProperty("min")) {
-      if (map.getView().getZoom() < endpoint.zoom.min) {
-          return null;
-      }
-  }
-
-  if (endpoint.hasOwnProperty("zoom") && endpoint.zoom.hasOwnProperty("max")) {
-      if (map.getView().getZoom() > endpoint.zoom.max) {
-          return null;
-      }
-  }
-
-  return async (pixel, event) => {
-    if (!pixel || !Array.isArray(pixel) || pixel.length != 2) {
-      console.warn("Invalid parameter provided to getFeaturesUnderPixel. Expected an array with a length of 2. Got", pixel);
-    }
-    getLogger()("Getting features at", pixel);
-    return getLoadingPromise(vtLayer).then(async () => {
-      getLogger()("Loaded tiles, calling getFeatures");
-
-      let coords = map.getCoordinateFromPixel(pixel);
-      getLogger()("Coords", coords);
-
-      let zoom = map.getView().getZoom();
-      getLogger()("Zoom", zoom);
-
-      let buf = (25 - zoom);
-
-      switch (zoom) {
-        case 1:
-        case 2:
-        case 3:
-        case 4:
-        case 5:
-        case 6:
-          buf = 100; break;
-        case 7:
-        case 8:
-        case 9:
-        case 10:
-          buf = 50; break;
-        case 11:
-        case 12:
-        case 13:
-        case 14:
-        case 15:
-          buf = 20; break;
-        case 16:
-        case 17:
-        case 18:
-        case 19:
-        case 20:
-        case 21:
-        case 22:
-        case 23:
-        case 24:
-          buf = 10; break;
-        default: buf = 1; break;
-      }
-
-      if (buf <= 0) buf = 1;
-      getLogger()("buf", buf);
-
-      let ext = [coords[0] - buf, coords[1] - buf, coords[0] + buf, coords[1] + buf]
-      getLogger()("ext", ext);
-
-      let features = vtLayer.getSource().getFeaturesInExtent(ext);
-      //let features = await vtLayer.getFeatures(pixel);
-      getLogger()("Got features", features);
-
-      let ret = _deduplicateFeatures(features);
-      getLogger()("Deduplicated", ret);
-
-      return ret;
-    });
   }
 };
 

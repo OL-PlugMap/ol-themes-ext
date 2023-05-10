@@ -37,7 +37,7 @@ export const generate = (layerConfig, core) => {
         resolutions[z] = size / Math.pow(2, z);
     }
 
-    let layers = layerConfig.config.value.endpoints.map(endpoint => {
+    const layers = layerConfig.config.value.endpoints.map(endpoint => {
         //The random adds a random value to the parameter
         //essentially cache busting
         let customParams = {
@@ -131,6 +131,10 @@ export const generate = (layerConfig, core) => {
 
 
         return lyr;
+    });
+
+    layers.array.forEach(element => {
+        
     });
 
     return layers;

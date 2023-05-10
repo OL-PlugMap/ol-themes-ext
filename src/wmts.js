@@ -67,22 +67,22 @@ export const generate = (layerConfig, core) => {
 
         let source = new WMTS({
             crossOrigin: 'anonymous',
-            matrixSet: 'EPSG%3A3857',
-            format: 'image/png',
+            matrixSet: endpoint.matrixSet || 'EPSG%3A3857',
+            format: endpoint.format || 'image/png',
             projection: projection,
-            requestEncoding: 'REST',
             tileGrid: new WMTSTileGrid({
-                extent: layerConfig.config.value.extent,
+                extent: layerConfig.config.value.extent || projectionExtent,
                 resolutions: resolutions,
                 matrixIds: matrixIds,
                 origin: getTopLeft(projectionExtent)
             }),
-            style: 'default',
-            layer: endpoint.layerToShow,
+            style: endpoint.style || 'default',
+            layer: endpoint.layer || endpoint.layerToShow,
             opaque: false,
             transparent: true,
             url: endpoint.url
         });
+        
         let lyr = new TileLayer({
             visible: false,
             preload: 4,

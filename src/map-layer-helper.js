@@ -291,7 +291,7 @@ export default class Themes {
     categoryGroup.type = "category";
 
     categoryGroup.getSelectionType = function () {
-      return select.selection_type;
+      return categoryGroup.config.selection.selection_type;
     }
 
     categoryGroup.getSelectionKeys = function () {
@@ -303,11 +303,11 @@ export default class Themes {
     }
 
     categoryGroup.isMultiphasic = function () {
-      return category.multiphasic === true || category.canChangeOpacity === true;
+      return categoryGroup.multiphasic === true || categoryGroup.canChangeOpacity === true;
     }
 
     categoryGroup.canChangeOpacity = function () {
-      return category.multiphasic === true || category.canChangeOpacity === true;
+      return categoryGroup.multiphasic === true || categoryGroup.canChangeOpacity === true;
     }
 
     categoryGroup.getSelectedLayers = () => {

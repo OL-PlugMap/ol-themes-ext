@@ -33,29 +33,29 @@ export const generate = (layerConfig, core) => {
     let layers = layerConfig.config.value.endpoints.map(endpoint => {
 
         let errors = [];
-        if (!endpoint.url || endpoint.url.indexOf("?") == -1) {
-            endpoint.url += "?Service=WMTS&Request=GetTile&Version=1.0.0&Format=image/png";
-        }
-        if (!endpoint.url || endpoint.url.indexOf("{TileMatrixSet}") == -1) {
-            endpoint.url += "&TileMatrixSet={TileMatrixSet}"
-            //errors.push("Missing \"{TileMatrixSet}\" in WMTS endpoint");
-        }
-        if (!endpoint.url || endpoint.url.indexOf("{TileMatrix}") == -1) {
-            endpoint.url += "&TileMatrix={TileMatrix}"
-            //errors.push("Missing \"{TileMatrix}\" in WMTS endpoint");
-        }
-        if (!endpoint.url || endpoint.url.indexOf("{TileRow}") == -1) {
-            endpoint.url += "&TileRow={TileRow}"
-            //errors.push("Missing \"{TileRow}\" in WMTS endpoint");
-        }
-        if (!endpoint.url || endpoint.url.indexOf("{TileCol}") == -1) {
-            endpoint.url += "&TileCol={TileCol}"
-            //errors.push("Missing \"{TileCol}\" in WMTS endpoint");
-        }
-        if (!endpoint.url || endpoint.url.indexOf("Layer") == -1) {
-            endpoint.url += "&Layer={Layer}"
-            //errors.push("Missing \"{Layer}\" in WMTS endpoint");
-        }
+        // if (!endpoint.url || endpoint.url.indexOf("?") == -1) {
+        //     endpoint.url += "?Service=WMTS&Request=GetTile&Version=1.0.0&Format=image/png";
+        // }
+        // if (!endpoint.url || endpoint.url.indexOf("{TileMatrixSet}") == -1) {
+        //     endpoint.url += "&TileMatrixSet={TileMatrixSet}"
+        //     //errors.push("Missing \"{TileMatrixSet}\" in WMTS endpoint");
+        // }
+        // if (!endpoint.url || endpoint.url.indexOf("{TileMatrix}") == -1) {
+        //     endpoint.url += "&TileMatrix={TileMatrix}"
+        //     //errors.push("Missing \"{TileMatrix}\" in WMTS endpoint");
+        // }
+        // if (!endpoint.url || endpoint.url.indexOf("{TileRow}") == -1) {
+        //     endpoint.url += "&TileRow={TileRow}"
+        //     //errors.push("Missing \"{TileRow}\" in WMTS endpoint");
+        // }
+        // if (!endpoint.url || endpoint.url.indexOf("{TileCol}") == -1) {
+        //     endpoint.url += "&TileCol={TileCol}"
+        //     //errors.push("Missing \"{TileCol}\" in WMTS endpoint");
+        // }
+        // if (!endpoint.url || endpoint.url.indexOf("Layer") == -1) {
+        //     endpoint.url += "&Layer={Layer}"
+        //     //errors.push("Missing \"{Layer}\" in WMTS endpoint");
+        // }
         if (errors.length > 0) {
             console.error("Errors in WMTS endpoint", errors);
         }
@@ -82,7 +82,7 @@ export const generate = (layerConfig, core) => {
             transparent: true,
             url: endpoint.url
         });
-        
+
         let lyr = new TileLayer({
             visible: false,
             preload: 4,

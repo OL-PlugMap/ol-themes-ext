@@ -65,23 +65,35 @@ export const generate = (layerConfig, core) => {
             endpoint.url = endpoint.url.replace("{Layer}", endpoint.layerToShow);
         }
 
-        let source = new WMTS({
+        let sourceGridConf = {
+            extent: layerConfig.config.value.extent || projectionExtent,
+            resolutions: resolutions,
+            origin: getTopLeft(projectionExtent)
+        };
+
+        let sourceConf = {
             crossOrigin: 'anonymous',
-            matrixSet: endpoint.matrixSet || 'EPSG%3A3857',
             format: endpoint.format || 'image/png',
             projection: projection,
-            tileGrid: new WMTSTileGrid({
-                extent: layerConfig.config.value.extent || projectionExtent,
-                resolutions: resolutions,
-                matrixIds: matrixIds,
-                origin: getTopLeft(projectionExtent)
-            }),
+            tileGrid: null,
             style: endpoint.style || 'default',
             layer: endpoint.layer || endpoint.layerToShow,
             opaque: false,
             transparent: true,
             url: endpoint.url
-        });
+        };
+
+        if (endpoint.matrixSet) {
+            sourceConf.matrixSet = endpoint.matrixSet;
+        }
+
+        if (endpoint.matrixIds) {
+            sourceGridConf.matrixIds = endpoint.matrixIds;
+        }
+
+        endpoint.tileGrid = new WMTSTileGrid(sourceGridConf);
+
+        let source = new WMTS(sourceConf);
 
         let lyr = new TileLayer({
             visible: false,

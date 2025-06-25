@@ -1,16 +1,14 @@
-
 import TileGrid from "ol/tilegrid/TileGrid"
 import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
 import {createXYZ} from 'ol/tilegrid';
-import { Fill, Stroke, Style, CircleStyle } from 'ol/style';
-import { applyStyle } from 'ol-mapbox-style';
+import { Fill, Stroke, Style } from 'ol/style';
 import EsriJSON from 'ol/format/EsriJSON';
 import { get } from "ol/proj";
 import { getWidth } from "ol/extent";
 import {tile as tileStrategy} from 'ol/loadingstrategy';
 import { getLogger, getWarning } from "./logger";
-import { createStyleFunction, setMapProjection } from 'ol-esri-style';
+import { createStyleFunction } from 'ol-esri-style-10';
 
 
 const esrijsonFormat = new EsriJSON();
@@ -90,14 +88,15 @@ export const generate = (data, core) => {
       }
     }
 
-
-    window.fetch(endpoint.url + "?f=json")
+    if(!endpoint.style) {
+      window.fetch(endpoint.url + "?f=json")
       .then(resp => { return resp.json() } )
       .then(meta => {
         try
         {
           getLogger()("Style", meta);
-          setMapProjection(core.getMap().getView().getProjection());
+          console.log("Metadata", meta);
+          //setMapProjection(core.getMap().getView().getProjection());
           createStyleFunction(meta).then(styleFunction => {
             getLogger()("Debug stuff here");
             endpoint.styleFunction = (feature, resolution) => {
@@ -193,6 +192,7 @@ export const generate = (data, core) => {
           getWarning()("Unable to get style from provided URL", endpoint.url, a. endpoint)
           endpoint.styleCache = false;
       });
+    }
 
     
 
@@ -366,3 +366,284 @@ export const generate = (data, core) => {
 
   return layers;
 };
+
+/**
+ * Helper class to build configuration objects for the esriFeature generate function.
+ *
+ * Example usage:
+ *   const config = new EsriFeatureConfigBuilder()
+ *     .setKey('myLayerGroup')
+ *     .setOpacity(0.8)
+ *     .setExtent([-13884991, 2870341, -7455066, 6338219])
+ *     .addEndpoint({
+ *       url: 'https://example.com/arcgis/rest/services/Layer/FeatureServer/0',
+ *       bbox: '...',
+ *       layersToShow: '0,1,2',
+ *       zIndex: 2,
+ *       tokenKey: 'myToken',
+ *       style: myStyleFunction // or a static style object
+ *     })
+ *     .build();
+ */
+export class EsriFeatureConfigBuilder {
+  /**
+   * @param {Object} [initialConfig] - Optional initial configuration object.
+   */
+  constructor(initialConfig = {}) {
+    this._config = {
+      config: {
+        value: {
+          endpoints: [],
+          ...(initialConfig.config && initialConfig.config.value ? initialConfig.config.value : {})
+        },
+      },
+      key: initialConfig.key || '',
+      opacity: typeof initialConfig.opacity === 'number' ? initialConfig.opacity : 1,
+    };
+
+    // If endpoints are provided, ensure it's an array
+    if (
+      initialConfig.config &&
+      initialConfig.config.value &&
+      Array.isArray(initialConfig.config.value.endpoints)
+    ) {
+      this._config.config.value.endpoints = [...initialConfig.config.value.endpoints];
+    }
+  }
+
+  /**
+   * Set the unique key for the layer group.
+   * @param {string} key
+   */
+  setKey(key) {
+    this._config.key = key;
+    return this;
+  }
+
+  /**
+   * Set the opacity for the layer group.
+   * @param {number} opacity
+   * @throws {Error} If opacity is not a number between 0 and 1.
+   * @returns {EsriFeatureConfigBuilder} Returns the builder instance for chaining.
+   */
+  setOpacity(opacity) {
+    if (typeof opacity !== 'number' || opacity < 0 || opacity > 1) {
+      throw new Error('Opacity must be a number between 0 and 1.');
+    }
+    this._config.opacity = opacity;
+    return this;
+  }
+
+  /**
+   * Sets the name of the layer group.
+   * @param {string} name
+   * @returns {EsriFeatureConfigBuilder} Returns the builder instance for chaining.
+   */
+  setName(name) {
+    this._config.name = name;
+    return this;
+  }
+
+  /**
+   * Set the z-index for the layer group.
+   * @param {number} zIndex
+   * @throws {Error} If zIndex is not a number.
+   * @returns {EsriFeatureConfigBuilder} Returns the builder instance for chaining.
+   * */
+  setZIndex(zIndex) {
+    if (typeof zIndex !== 'number') {
+      throw new Error('Z-index must be a number.');
+    }
+    this._config.zIndex = zIndex;
+    return this;
+  }
+
+
+  /**
+   * Set whether the layer group is hidden.
+   * @param {*} hidden 
+   * @returns 
+   */
+  setHidden(hidden) {
+    if (typeof hidden !== 'boolean') {
+      throw new Error('Hidden must be a boolean value.');
+    }
+    this._config.hidden = hidden;
+    return this;
+  }
+
+  /**
+   * Set the extent for the layers.
+   * @param {Array<number>} extent
+   */
+  setExtent(extent) {
+    this._config.config.value.extent = extent;
+    return this;
+  }
+
+  /**
+   * Set the layerDefs for the layers.
+   * @param {Object|string} layerDefs
+   */
+  setLayerDefs(layerDefs) {
+    this._config.config.value.layerDefs = layerDefs;
+    return this;
+  }
+
+  /**
+   * Add an endpoint configuration with validation.
+   * @param {Object} endpoint
+   * @param {string} endpoint.url - ArcGIS REST endpoint URL. (required)
+   * @param {string} [endpoint.bbox] - Optional bounding box.
+   * @param {string} [endpoint.layersToShow] - Optional comma-separated list of layer IDs.
+   * @param {number} [endpoint.zIndex] - Optional z-index.
+   * @param {string} [endpoint.tokenKey] - Optional token key for authentication.
+   * @param {Function|Object} [endpoint.style] - Optional static or dynamic style.
+   * @throws {Error} If required parameters are missing or invalid.
+   */
+  addEndpoint(endpoint) {
+    // Validate required fields
+    if (!endpoint || typeof endpoint !== 'object') {
+      throw new Error('Endpoint must be an object.');
+    }
+    if (!endpoint.url || typeof endpoint.url !== 'string') {
+      throw new Error('Endpoint "url" is required and must be a string.');
+    }
+    // Optional: Validate types of optional fields
+    if (endpoint.bbox && typeof endpoint.bbox !== 'string') {
+      throw new Error('Endpoint "bbox" must be a string if provided.');
+    }
+    if (endpoint.layersToShow && typeof endpoint.layersToShow !== 'string') {
+      throw new Error('Endpoint "layersToShow" must be a string if provided.');
+    }
+    if (endpoint.zIndex && typeof endpoint.zIndex !== 'number') {
+      throw new Error('Endpoint "zIndex" must be a number if provided.');
+    }
+    if (endpoint.tokenKey && typeof endpoint.tokenKey !== 'string') {
+      throw new Error('Endpoint "tokenKey" must be a string if provided.');
+    }
+    // style can be a function or an object, so no strict validation
+
+    this._config.config.value.endpoints.push(endpoint);
+    return this;
+  }
+
+  /**
+   * Build and return the configuration object.
+   * @returns {Object}
+   */
+  build() {
+    return {
+      key: this._config.key,
+      opacity: this._config.opacity,
+      name: this._config.name || this._config.key,
+      zIndex: this._config.zIndex || 0,
+      hidden: this._config.hidden || false,
+      extent: this._config.config.value.extent || [-13884991, 2870341, -7455066, 6338219],
+
+      esriFeature: this._config.config.value,
+    }
+  }
+}
+
+/**
+ * Builder for a single endpoint configuration for EsriFeatureConfigBuilder.
+ *
+ * Example usage:
+ *   const endpoint = new EsriFeatureEndpointConfigBuilder()
+ *     .setUrl('https://example.com/arcgis/rest/services/Layer/FeatureServer/0')
+ *     .setBbox('...')
+ *     .setLayersToShow('0,1,2')
+ *     .setZIndex(2)
+ *     .setTokenKey('myToken')
+ *     .setStyle(myStyleFunction) // or a static style object
+ *     .build();
+ */
+export class EsriFeatureEndpointConfigBuilder {
+  /**
+   * @param {Object} [initialEndpoint] - Optional initial endpoint configuration.
+   */
+  constructor(initialEndpoint = {}) {
+    this._endpoint = { ...initialEndpoint };
+  }
+
+  /**
+   * Set the ArcGIS REST endpoint URL (required).
+   * @param {string} url
+   */
+  setUrl(url) {
+    this._endpoint.url = url;
+    return this;
+  }
+
+  /**
+   * Set the bounding box (optional).
+   * @param {string} bbox
+   */
+  setBbox(bbox) {
+    this._endpoint.bbox = bbox;
+    return this;
+  }
+
+  /**
+   * Set the comma-separated list of layer IDs to show (optional).
+   * @param {string} layersToShow
+   */
+  setLayersToShow(layersToShow) {
+    this._endpoint.layersToShow = layersToShow;
+    return this;
+  }
+
+  /**
+   * Set the z-index for the layer (optional).
+   * @param {number} zIndex
+   */
+  setZIndex(zIndex) {
+    this._endpoint.zIndex = zIndex;
+    return this;
+  }
+
+  /**
+   * Set the token key for authentication (optional).
+   * @param {string} tokenKey
+   */
+  setTokenKey(tokenKey) {
+    this._endpoint.tokenKey = tokenKey;
+    return this;
+  }
+
+  /**
+   * Set a static or dynamic style (optional).
+   * @param {Function|Object} style
+   */
+  setStyle(style) {
+    this._endpoint.style = style;
+    return this;
+  }
+
+  /**
+   * Build and return the endpoint configuration object.
+   * @returns {Object}
+   * @throws {Error} If required parameters are missing or invalid.
+   */
+  build() {
+    if (!this._endpoint.url || typeof this._endpoint.url !== 'string') {
+      throw new Error('Endpoint "url" is required and must be a string.');
+    }
+    if (this._endpoint.bbox && typeof this._endpoint.bbox !== 'string') {
+      throw new Error('Endpoint "bbox" must be a string if provided.');
+    }
+    if (this._endpoint.layersToShow && typeof this._endpoint.layersToShow !== 'string') {
+      throw new Error('Endpoint "layersToShow" must be a string if provided.');
+    }
+    if (this._endpoint.zIndex && typeof this._endpoint.zIndex !== 'number') {
+      throw new Error('Endpoint "zIndex" must be a number if provided.');
+    }
+    if (this._endpoint.tokenKey && typeof this._endpoint.tokenKey !== 'string') {
+      throw new Error('Endpoint "tokenKey" must be a string if provided.');
+    }
+    // style can be a function or an object, so no strict validation
+
+    return { ...this._endpoint };
+  }
+}

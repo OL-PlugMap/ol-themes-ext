@@ -146,6 +146,7 @@ export default class ol_themes_ext {
     
 
     initCategories(config, withConfig) {
+        console.log("Init categories")
         getLogger()("Setting up", config);
         if(isConfig(config))
         {
@@ -188,6 +189,21 @@ export default class ol_themes_ext {
 
     getCategories() {
         return this.categories;
+    }
+
+    async getFeaturesInView() {
+        let all = [];
+        for(let category of this.categories) {
+            if(category.getFeaturesInView)
+            {
+                let catF = category.getFeaturesInView();
+                if(catF && catF.length > 0) {
+                    all = all.concat(catF);
+                }
+            }
+        }
+        let every = await Promise.all(all);
+        return every.flat();
     }
 
     

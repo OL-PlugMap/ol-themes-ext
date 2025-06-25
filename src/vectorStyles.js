@@ -50,6 +50,15 @@ class ConfigurableStyleEngine {
     this.unstyled = new Style(this.unstyledConf);
   }
 
+  /**
+   * Creates a FillPattern instance based on the provided style object.
+   *
+   * @param {Object} style - The style object containing pattern options.
+   * @param {Object} style.pattern - The pattern options for FillPattern.
+   * @param {string} style.strokeColor - The color to use for the pattern's stroke.
+   * @param {string} style.fillColor - The color to use for the pattern's fill.
+   * @returns {FillPattern} The generated FillPattern instance.
+   */
   pattern(style) {
     let opts = style.pattern;
     opts.color = style.strokeColor
@@ -57,10 +66,24 @@ class ConfigurableStyleEngine {
     return new FillPattern(opts);
   };
 
+  /**
+   * Determines if a given feature is highlighted in the specified source.
+   *
+   * @param {Object} source - The source object containing highlighted features.
+   * @param {ol.Feature} feature - The OpenLayers feature to check.
+   * @returns {boolean} True if the feature is highlighted; otherwise, false.
+   */
   featureIsHighlighted (source, feature) {
     return source.highlightFeats[feature.getId()];
   }
 
+  /**
+   * Determines whether a given feature should be rendered based on various filter conditions.
+   *
+   * @param {Object} source - The source object containing filter settings.
+   * @param {ol.Feature} feature - The OpenLayers feature to evaluate for rendering.
+   * @returns {boolean} True if the feature should be rendered, otherwise false.
+   */
   featureShouldBeRendered (source, feature) {
     var renderFeature = true;
     var fev = feature.get("FilterEngine");
@@ -83,6 +106,21 @@ class ConfigurableStyleEngine {
     return renderFeature;
   }
 
+  /**
+   * Generates a dynamic style function for vector features based on endpoint and source configuration.
+   *
+   * @param {Object} endpoint - The endpoint configuration object, expected to contain style information.
+   * @param {Object} source - The source object used for feature highlighting and rendering logic.
+   * @returns {function} A function that takes an OpenLayers feature and returns an appropriate style instance.
+   *
+   * The returned function applies the following logic:
+   * - Returns a highlight style if the feature is highlighted.
+   * - Checks if the feature should be rendered; if not, returns an invisible style.
+   * - Returns a selected style if the feature is marked as selected.
+   * - If the feature has the specified dynamic field, applies a style from the dynamic map.
+   * - Returns an invisible style if no matching style is found in the map.
+   * - Returns an unstyled style as a fallback.
+   */
   dynamicStyling (endpoint, source) {
 
     let that = this;
@@ -124,6 +162,34 @@ class ConfigurableStyleEngine {
     }
   }
 
+  /**
+   * Converts a style configuration object into an OpenLayers style configuration.
+   *
+   * @param {Object} style - The style configuration object.
+   * @param {Object} [style.pattern] - Optional pattern fill configuration.
+   * @param {string} [style.fillColor] - Fill color in CSS color format (e.g., "rgba(255,0,0,0.5)").
+   * @param {string} [style.strokeColor] - Stroke color in CSS color format.
+   * @param {number} [style.strokeWidth=4] - Stroke width in pixels.
+   * @param {Object} [style.image] - Image style configuration.
+   * @param {string} [style.image.type] - Type of image ("circle" or "icon").
+   * @param {number} [style.image.radius=10] - Radius for circle image.
+   * @param {string} [style.image.strokeColor='#fff'] - Stroke color for circle image.
+   * @param {string} [style.image.fillColor='#3399CC'] - Fill color for circle image.
+   * @param {string} [style.image.src] - Source URL for icon image.
+   * @param {Array<number>} [style.image.anchor=[0.5, 0.5]] - Anchor for icon image.
+   * @param {string} [style.image.anchorXUnits='fraction'] - X anchor units for icon image.
+   * @param {string} [style.image.anchorYUnits='fraction'] - Y anchor units for icon image.
+   * @param {number} [style.image.scale=1] - Scale for icon image.
+   * @param {number} [style.image.rotation=0] - Rotation for icon image in radians.
+   * @param {number} [style.image.opacity=1] - Opacity for icon image.
+   * @param {string} [style.image.color='#000'] - Color for icon image.
+   * @param {string} [style.image.crossOrigin='anonymous'] - Cross-origin setting for icon image.
+   * @param {Object} [style.text] - Text style configuration.
+   * @param {string} [style.text.static] - Static text to display.
+   * @param {string} [style.text.font='12px Calibri,sans-serif'] - Font for text.
+   * @param {string} [style.text.fillColor='#fff'] - Fill color for text.
+   * @returns {Object} styleConf - The OpenLayers style configuration object.
+   */
   convertToStyleConf (style) {
     let styleConf = {};
 
@@ -181,6 +247,20 @@ class ConfigurableStyleEngine {
     return styleConf;
   }
 
+  /**
+   * Generates a style function for vector features with static styling and dynamic text labels.
+   *
+   * This method creates and returns a function that can be used as an OpenLayers style function.
+   * The returned function applies a static style to features, but dynamically sets the text label
+   * based on a property of each feature. It also supports highlighting features and customizes
+   * text appearance such as font, fill, stroke, and padding.
+   *
+   * @param {string} endpoint - The endpoint associated with the vector source.
+   * @param {Object} source - The vector source object containing features and highlight information.
+   * @param {Object} styleConf - The style configuration object to be used or updated.
+   * @param {Object} style - The style definition object, including text and highlight options.
+   * @returns {function} A style function that takes an OpenLayers feature and returns an OpenLayers Style instance.
+   */
   staticStylingWithDynamicTextLabels (endpoint, source, styleConf, style) {
     let that = this;
     this.style = style;
@@ -229,6 +309,15 @@ class ConfigurableStyleEngine {
     }
   }
 
+  /**
+   * Generates a style function for OpenLayers vector features based on static and highlight styles.
+   * Applies a highlight style to features marked as highlighted in the source, otherwise applies the default static style.
+   * If the style includes dynamic text labels, delegates to a specialized handler.
+   *
+   * @param {Object} endpoint - The endpoint configuration object containing style definitions.
+   * @param {Object} source - The vector source object, expected to have a `highlightFeats` property mapping feature IDs to highlight status.
+   * @returns {function} A style function that takes an OpenLayers feature and returns an OpenLayers Style instance.
+   */
   staticStyling (endpoint, source) {
     this.endpoint = endpoint;
     this.source = source;
@@ -281,6 +370,19 @@ class ConfigurableStyleEngine {
     }
   }
 
+  /**
+   * Applies a vector style from a remote endpoint to the current layer.
+   *
+   * Fetches a style JSON from the provided endpoint, validates that all specified layers
+   * share the same vector source, normalizes sprite and glyph URLs if present, and applies
+   * the style to the layer. Handles errors for missing sources, mismatched sources, and
+   * non-vector sources. Sets the source state to "ready" upon successful application.
+   *
+   * @param {Object} endpoint - The endpoint object containing the style URL.
+   * @param {Object} source - The source object associated with the layer.
+   *
+   * @returns {void}
+   */
   urlStyling (endpoint, source) {
     let that = layer;
     that.handleError = function (err) { console.error(err); };
@@ -393,4 +495,9 @@ export class ConfigurableStyle {
       this.getStyle = configurableStyleEngine.unstyled;
     }
   }
+}
+
+export const _styleFunction = (endpoint, source, layer) => {
+  let style = new ConfigurableStyle(endpoint, source, layer);
+  return style.getStyle;
 }

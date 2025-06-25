@@ -349,7 +349,8 @@ let _refreshFunction = (source) =>
 let _loaderOld = (endpoint) => {
   return function(tile, url) {
     getLogger()("Loader", tile, url);
-    tile.setLoader(function(extent, resolution, projection) {
+    tile.setLoader(function(extent, resolution, projection, onSuccess, onError) {
+      tile.status__ = "loading";
       var fetchModel =
         {
           method: 'GET',
@@ -374,22 +375,26 @@ let _loaderOld = (endpoint) => {
             });
             getLogger()("Got features", url, features);
             tile.setFeatures(features);
+            onSuccess(features);
           }
           catch(ex)
           {
             getLogger()("Unable to load tile", ex, tile, url);
             tile.setFeatures([]);
+            onError();
           }
         })
         .catch(ex => {
           getLogger()("Unable to get AB for tile", ex, tile, url);
           tile.setFeatures([]);
+          onError();
         });
       })
       .catch(err => {
         getLogger()("Error Fetching", err);
         // In the event there is an error setting the status to error would be wise however, when a tile state is set to error the rest of the map starts doing weird things.
         tile.setFeatures([]);
+        onError();
       });
     });
   }
@@ -491,7 +496,7 @@ let _deduplicateFeatures = (features) => {
 let _getFeaturesInView = (vtLayer, map) => {
   return async () => {
     return getLoadingPromise(vtLayer).then(async () => {
-      let features = vtLayer.getSource().getFeaturesInExtent(map.getView().calculateExtent());
+      let features = vtLayer.getFeaturesInExtent(map.getView().calculateExtent())
       
       let ret = _deduplicateFeatures(features);
 
@@ -603,7 +608,7 @@ let _configureSource = (tokenKey) => {
 //When they exist and load has finished then resolve them
 
 let isLoadingTiles = (source) => {
-  let numLoading = source.sourceTileCache.getValues().filter(tile => { return tile.status__ == "loading" }).length;
+  let numLoading = Object.values(source.sourceTiles_).filter(tile => { return tile.status__ == "loading" }).length;
   getLogger()("Loading", numLoading);
   return numLoading > 0;
 }
@@ -616,7 +621,8 @@ let handlePostRender = (source, vtLayer) => {
   });
 
   return (evt) => {
-    let loadingTiles = source.sourceTileCache.getValues().filter(tile => { return tile.status__ == "loading" });
+    // Note this crashes in ol 10.5, todo: Fix this
+    let loadingTiles = source?.sourceTileCache ? source.sourceTileCache.getValues().filter(tile => { return tile.status__ == "loading" }) : [];
     let loadingTilesCount = loadingTiles.length;
 
     if(loadingTilesCount > 0)
@@ -763,4 +769,125 @@ export const generate = (data, core) => {
       });
 
     return layers;
+}
+
+// ...existing code...
+
+/**
+ * Builder for a single endpoint configuration for MVT layers.
+ *
+ * Example usage:
+ *   const endpoint = new MvtEndpointConfigBuilder()
+ *     .setUrl('https://example.com/tiles/{z}/{x}/{y}.pbf')
+ *     .setZIndex(1000)
+ *     .setTileSize(256)
+ *     .setHeaders({ Authorization: 'Bearer token' })
+ *     .build();
+ */
+export class MvtEndpointConfigBuilder {
+  /**
+   * @param {Object} [initialEndpoint] - Optional initial endpoint configuration.
+   */
+  constructor(initialEndpoint = {}) {
+    this._endpoint = { ...initialEndpoint };
+  }
+
+  setUrl(url) {
+    this._endpoint.url = url;
+    return this;
+  }
+
+  setZIndex(zIndex) {
+    this._endpoint.zIndex = zIndex;
+    return this;
+  }
+
+  setTileSize(tileSize) {
+    this._endpoint.tileSize = tileSize;
+    return this;
+  }
+
+  setHeaders(headers) {
+    this._endpoint.headers = headers;
+    return this;
+  }
+
+  build() {
+    if (!this._endpoint.url || typeof this._endpoint.url !== 'string') {
+      throw new Error('Endpoint "url" is required and must be a string.');
+    }
+    if (this._endpoint.zIndex && typeof this._endpoint.zIndex !== 'number') {
+      throw new Error('Endpoint "zIndex" must be a number if provided.');
+    }
+    if (this._endpoint.tileSize && typeof this._endpoint.tileSize !== 'number') {
+      throw new Error('Endpoint "tileSize" must be a number if provided.');
+    }
+    if (this._endpoint.headers && typeof this._endpoint.headers !== 'object') {
+      throw new Error('Endpoint "headers" must be an object if provided.');
+    }
+    return { ...this._endpoint };
+  }
+}
+
+/**
+ * Builder for the MVT configuration object.
+ *
+ * Example usage:
+ *   const config = new MvtConfigBuilder()
+ *     .setKey('myLayerGroup')
+ *     .setDeclutter(true)
+ *     .setCluster({ enabled: true, distance: 40, minDistance: 20 })
+ *     .addEndpoint(endpointConfig)
+ *     .build();
+ */
+export class MvtConfigBuilder {
+  /**
+   * @param {Object} [initialConfig] - Optional initial configuration object.
+   */
+  constructor(initialConfig = {}) {
+    this._config = {
+      config: {
+        value: {
+          endpoints: [],
+          ...(initialConfig.config && initialConfig.config.value ? initialConfig.config.value : {})
+        },
+      },
+      key: initialConfig.key || '',
+    };
+
+    if (
+      initialConfig.config &&
+      initialConfig.config.value &&
+      Array.isArray(initialConfig.config.value.endpoints)
+    ) {
+      this._config.config.value.endpoints = [...initialConfig.config.value.endpoints];
+    }
+  }
+
+  setKey(key) {
+    this._config.key = key;
+    return this;
+  }
+
+  setDeclutter(declutter) {
+    this._config.config.value.declutter = !!declutter;
+    return this;
+  }
+
+  setCluster(clusterConfig) {
+    this._config.config.value.cluster = clusterConfig;
+    return this;
+  }
+
+  addEndpoint(endpoint) {
+    if (!endpoint || typeof endpoint !== 'object') {
+      throw new Error('Endpoint must be an object.');
+    }
+    this._config.config.value.endpoints.push(endpoint);
+    return this;
+  }
+
+  build() {
+    return this._config;
+  }
 }

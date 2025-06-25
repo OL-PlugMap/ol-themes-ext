@@ -1,4 +1,3 @@
-
 import { Tile as TileLayer } from "ol/layer.js";
 import { TileArcGISRest } from "ol/source";
 import TileGrid from "ol/tilegrid/TileGrid"
@@ -14,13 +13,33 @@ import { _buildEngine } from './filterEngine'
 
 
 
+/**
+ * Generates OpenLayers TileLayer instances for ArcGIS REST endpoints with optional filtering and authentication.
+ *
+ * @param {Object} data - The configuration object for the export.
+ * @param {Object} data.config - The configuration details.
+ * @param {Object} data.config.value - The main config values.
+ * @param {Array}  data.config.value.endpoints - Array of endpoint objects to generate layers for.
+ * @param {string} data.key - Unique identifier for the layer group.
+ * @param {number} [data.opacity=1] - Opacity for the layers (default: 1).
+ * @param {Object} core - Core context object, typically containing authentication and service info.
+ * @param {Object} [core.services] - Optional. Service tokens and base URLs keyed by tokenKey.
+ * @returns {Array} Array of OpenLayers TileLayer instances, one for each endpoint.
+ *
+ * Each endpoint object in `data.config.value.endpoints` can have:
+ *   - url {string}: ArcGIS REST endpoint URL.
+ *   - bbox {string}: Optional. Bounding box for the request.
+ *   - layersToShow {string}: Optional. Comma-separated list of layer IDs to show.
+ *   - zIndex {number}: Optional. z-index for the layer.
+ *   - tokenKey {string}: Optional. Key to look up authentication info in core.services.
+ */
 export const generate = (data,core) => {
     let layers = data.config.value.endpoints.map(endpoint => {
     //The random adds a random value to the parameter
     //essentually cache busting  
     let customParams = {
       get random() {
-        return Math.random();
+        return data.config.value.cacheBust ? Math.random() : null;
       }
     };
 
@@ -205,7 +224,7 @@ export const generate = (data,core) => {
     
     //This is a hack because calling changed wont clear the tile cache automatically
     source.changed = () => {
-      source.tileCache.clear();
+      //source.tileCache.clear();
       source.oldChanged();
     }
 
@@ -266,3 +285,228 @@ export const generate = (data,core) => {
 
   return layers;
 };
+
+/**
+ * Helper class to build configuration objects for the `generate` function.
+ *
+ * Example usage:
+ *   const config = new EsriExportConfigBuilder()
+ *     .setKey('myLayerGroup')
+ *     .setOpacity(0.8)
+ *     .setExtent([-13884991, 2870341, -7455066, 6338219])
+ *     .addEndpoint({
+ *       url: 'https://example.com/arcgis/rest/services/Layer/MapServer/export',
+ *       bbox: '...',
+ *       layersToShow: '0,1,2',
+ *       zIndex: 2,
+ *       tokenKey: 'myToken'
+ *     })
+ *     .build();
+ */
+export class EsriExportConfigBuilder {
+  /**
+   * @param {Object} [initialConfig] - Optional initial configuration object.
+   */
+  constructor(initialConfig = {}) {
+    this._config = {
+      config: {
+        value: {
+          endpoints: [],
+          ...(initialConfig.config && initialConfig.config.value ? initialConfig.config.value : {})
+        },
+      },
+      key: initialConfig.key || '',
+      opacity: typeof initialConfig.opacity === 'number' ? initialConfig.opacity : 1,
+    };
+
+    // If endpoints are provided, ensure it's an array
+    if (
+      initialConfig.config &&
+      initialConfig.config.value &&
+      Array.isArray(initialConfig.config.value.endpoints)
+    ) {
+      this._config.config.value.endpoints = [...initialConfig.config.value.endpoints];
+    }
+  }
+
+  /**
+   * Set the unique key for the layer group.
+   * @param {string} key
+   */
+  setKey(key) {
+    this._config.key = key;
+    return this;
+  }
+
+  setName (name) {
+    this._config.name = name;
+    return this;
+  }
+
+  setZIndex (zIndex) {
+    this._config.zIndex = zIndex;
+    return this;
+  }
+
+  setHidden (hidden) {
+    this._config.hidden = hidden;
+    return this;
+  }
+
+  setLayerId (layerId) {
+    this._config.layerId = layerId;
+    return this;
+  }
+
+  /**
+   * Set the opacity for the layers.
+   * @param {number} opacity
+   */
+  setOpacity(opacity) {
+    this._config.opacity = opacity;
+    return this;
+  }
+
+  /**
+   * Set the extent for the layers.
+   * @param {Array<number>} extent
+   */
+  setExtent(extent) {
+    this._config.config.value.extent = extent;
+    return this;
+  }
+
+  /**
+   * Set the layerDefs for the layers.
+   * @param {Object|string} layerDefs
+   */
+  setLayerDefs(layerDefs) {
+    this._config.config.value.layerDefs = layerDefs;
+    return this;
+  }
+
+  /**
+   * Add an endpoint configuration with validation.
+   * @param {Object} endpoint
+   * @param {string} endpoint.url - ArcGIS REST endpoint URL. (required)
+   * @param {string} [endpoint.bbox] - Optional bounding box.
+   * @param {string} [endpoint.layersToShow] - Optional comma-separated list of layer IDs.
+   * @param {number} [endpoint.zIndex] - Optional z-index.
+   * @param {string} [endpoint.tokenKey] - Optional token key for authentication.
+   * @throws {Error} If required parameters are missing or invalid.
+   */
+  addEndpoint(endpoint) {
+    // Validate required fields
+    if (!endpoint || typeof endpoint !== 'object') {
+      throw new Error('Endpoint must be an object.');
+    }
+    if (!endpoint.url || typeof endpoint.url !== 'string') {
+      throw new Error('Endpoint "url" is required and must be a string.');
+    }
+    // Optional: Validate types of optional fields
+    if (endpoint.bbox && typeof endpoint.bbox !== 'string') {
+      throw new Error('Endpoint "bbox" must be a string if provided.');
+    }
+    if (endpoint.layersToShow && typeof endpoint.layersToShow !== 'string') {
+      throw new Error('Endpoint "layersToShow" must be a string if provided.');
+    }
+    if (endpoint.zIndex && typeof endpoint.zIndex !== 'number') {
+      throw new Error('Endpoint "zIndex" must be a number if provided.');
+    }
+    if (endpoint.tokenKey && typeof endpoint.tokenKey !== 'string') {
+      throw new Error('Endpoint "tokenKey" must be a string if provided.');
+    }
+
+    this._config.config.value.endpoints.push(endpoint);
+    return this;
+  }
+
+  /**
+   * Build and return the configuration object.
+   * @returns {Object}
+   */
+  buildRaw() {
+    return this._config;
+  }
+
+  build() {
+    return {
+      key: this._config.key,
+      name: this._config.name,
+      zIndex: this._config.zIndex,
+      hidden: this._config.hidden,
+      layerId: this._config.layerId,
+      opacity: this._config.opacity,
+      esriExport: {
+        endpoints: this._config.config.value.endpoints,
+        extent: this._config.config.value.extent || [-13884991, 2870341, -7455066, 6338219],
+        layerDefs: this._config.config.value.layerDefs || {},
+
+      }
+    };
+  }
+}
+
+/**
+ * Builder for a single endpoint configuration.
+ *
+ * Example usage:
+ *   const endpoint = new EsriExportEndpointConfigBuilder({ url: '...' })
+ *     .setBbox('...')
+ *     .setLayersToShow('0,1,2')
+ *     .setZIndex(2)
+ *     .setTokenKey('myToken')
+ *     .build();
+ */
+export class EsriExportEndpointConfigBuilder {
+  /**
+   * @param {Object} [initialEndpoint] - Optional initial endpoint configuration.
+   */
+  constructor(initialEndpoint = {}) {
+    this._endpoint = { ...initialEndpoint };
+  }
+
+  setUrl(url) {
+    this._endpoint.url = url;
+    return this;
+  }
+
+  setBbox(bbox) {
+    this._endpoint.bbox = bbox;
+    return this;
+  }
+
+  setLayersToShow(layersToShow) {
+    this._endpoint.layersToShow = layersToShow;
+    return this;
+  }
+
+  setZIndex(zIndex) {
+    this._endpoint.zIndex = zIndex;
+    return this;
+  }
+
+  setTokenKey(tokenKey) {
+    this._endpoint.tokenKey = tokenKey;
+    return this;
+  }
+
+  build() {
+    if (!this._endpoint.url || typeof this._endpoint.url !== 'string') {
+      throw new Error('Endpoint "url" is required and must be a string.');
+    }
+    if (this._endpoint.bbox && typeof this._endpoint.bbox !== 'string') {
+      throw new Error('Endpoint "bbox" must be a string if provided.');
+    }
+    if (this._endpoint.layersToShow && typeof this._endpoint.layersToShow !== 'string') {
+      throw new Error('Endpoint "layersToShow" must be a string if provided.');
+    }
+    if (this._endpoint.zIndex && typeof this._endpoint.zIndex !== 'number') {
+      throw new Error('Endpoint "zIndex" must be a number if provided.');
+    }
+    if (this._endpoint.tokenKey && typeof this._endpoint.tokenKey !== 'string') {
+      throw new Error('Endpoint "tokenKey" must be a string if provided.');
+    }
+    return { ...this._endpoint };
+  }
+}

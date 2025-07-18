@@ -229,6 +229,34 @@ let _filterEngine = (source) => {
 
 
 
+/**
+ * Applies filter definitions to a VectorTile source and layer.
+ *
+ * This function returns a handler that can be called with a `layerset` object containing filter definitions.
+ * It updates the source's filter state and toggles the layer's visibility based on whether any filters are applied.
+ *
+ * @param {ol/source/VectorTile} source - The vector tile source to apply filters to.
+ * @param {ol/layer/VectorTile} vtLayer - The vector tile layer whose visibility may be toggled.
+ * @returns {Function} A function that takes a `layerset` object and applies the filters.
+ *
+ * Example usage:
+ * ```js
+ * // Assume vtLayer is a VectorTileLayer and source is its VectorTileSource
+ * const layerset = {
+ *   filts: [
+ *     {
+ *       layerid: 'myLayer',
+ *       values: [
+ *         { applied: true, filter: { all: [{ field: 'foo', values: { exact: 'bar' } }] } }
+ *       ],
+ *       mode: 'AND'
+ *     }
+ *   ],
+ *   mode: 'AND'
+ * };
+ * vtLayer.applyFilters(layerset);
+ * ```
+ */
 let _applyFilters = (source, vtLayer) => {
   //TODO: Can we interpret vtLayer or source based off the other?
   return (layerset) => {
@@ -261,12 +289,12 @@ let _applyFilters = (source, vtLayer) => {
     if (anyApplied) {
       if (!source.inview)
         vtLayer.setVisible(true);
-      this.changed();
+      //this.changed();
     }
     else {
       if (!source.inview)
         vtLayer.setVisible(false);
-      this.changed();
+      //this.changed();
     }
 
 
@@ -770,8 +798,6 @@ export const generate = (data, core) => {
 
     return layers;
 }
-
-// ...existing code...
 
 /**
  * Builder for a single endpoint configuration for MVT layers.

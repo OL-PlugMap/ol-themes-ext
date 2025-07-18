@@ -89,7 +89,7 @@ export const _buildEngine = (source,vtLayer) => {
   };
 
 export const _checkFilter = (source, feature) => {
-    
+    getLogger()("Checking filters for", feature.getId(), "on source", source.id);
     if(source.filterSet) {
       let value = false;
 
@@ -98,6 +98,7 @@ export const _checkFilter = (source, feature) => {
     
       let keys = Object.keys(source.filterSet.values);
       let fields = Object.keys(feature.properties_);
+      getLogger()("Filter keys", keys, "fields", fields);
 
       if(!keys.length)
           value = true;

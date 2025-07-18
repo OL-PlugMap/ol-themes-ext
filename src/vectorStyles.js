@@ -5,6 +5,47 @@ import { _checkFilter } from './filterEngine'
 
 import { getLogger } from './logger'
 
+const unstyledConf = {
+      fill: new Fill({
+        color: "rgba(255,255,255,0.5)"
+      }),
+      stroke: new Stroke({
+        color: "rgba(0,0,0,0.75)",
+        width: 4
+      }),
+    };
+
+const unstyled = new Style(unstyledConf);
+
+/**
+   * Determines whether a given feature should be rendered based on various filter conditions.
+   *
+   * @param {Object} source - The source object containing filter settings.
+   * @param {ol.Feature} feature - The OpenLayers feature to evaluate for rendering.
+   * @returns {boolean} True if the feature should be rendered, otherwise false.
+   */
+const  featureShouldBeRendered = (source, feature) => {
+    var renderFeature = true;
+    var fev = feature.get("FilterEngine");
+    var r = true;
+
+    if (fev && fev.renderFn) {
+      fev.renderFn();
+      r = fev.render;
+    }
+
+    //Apparently webpack didnt take too kindly to ?. so I rewrote this to play nicer with it for now ...
+    getLogger()("Check feature render", source, feature)
+    if (source.filterSet && source.filterSet.mode && source.filterSet.mode != "NONE") {
+      let isRenderable = _checkFilter(source, feature);
+      getLogger()(isRenderable);
+      r = isRenderable;
+    }
+
+    renderFeature = feature.get("selected") || r;
+
+    return renderFeature;
+  }
 
 class ConfigurableStyleEngine {
   constructor() {
@@ -77,34 +118,7 @@ class ConfigurableStyleEngine {
     return source.highlightFeats[feature.getId()];
   }
 
-  /**
-   * Determines whether a given feature should be rendered based on various filter conditions.
-   *
-   * @param {Object} source - The source object containing filter settings.
-   * @param {ol.Feature} feature - The OpenLayers feature to evaluate for rendering.
-   * @returns {boolean} True if the feature should be rendered, otherwise false.
-   */
-  featureShouldBeRendered (source, feature) {
-    var renderFeature = true;
-    var fev = feature.get("FilterEngine");
-    var r = true;
-
-    if (fev && fev.renderFn) {
-      fev.renderFn();
-      r = fev.render;
-    }
-
-    //Apparently webpack didnt take too kindly to ?. so I rewrote this to play nicer with it for now ...
-    if (source.filterSet && source.filterSet.mode && source.filterSet.mode != "NONE") {
-      let isRenderable = _checkFilter(source, feature);
-      getLogger()(isRenderable);
-      r = isRenderable;
-    }
-
-    renderFeature = feature.get("selected") || r;
-
-    return renderFeature;
-  }
+  
 
   /**
    * Generates a dynamic style function for vector features based on endpoint and source configuration.
@@ -132,14 +146,14 @@ class ConfigurableStyleEngine {
         return that.highlightStyle;
       }
 
-      var renderFeature = this.featureShouldBeRendered(source, feature);
+      var renderFeature = featureShouldBeRendered(source, feature);
 
 
       let map = endpoint.style.dynamic.map;
       let field = endpoint.style.dynamic.field;
 
       if (!renderFeature) {
-        return invisibleStyle;
+        return that.invisibleStyle;
       } else if (feature.get("selected")) {
         return selectedStyle;
       } else if (feature && ((feature.properties_ && feature.properties_[field]) || feature.get && feature.get(field))) {
@@ -147,16 +161,16 @@ class ConfigurableStyleEngine {
         if (map[val]) {
           var style = map[val];
 
-          let styleConf = this.convertToStyleConf(style);
+          let styleConf = that.convertToStyleConf(style);
 
           return new Style(styleConf);
         }
         else {
-          return this.invisibleStyle;
+          return that.invisibleStyle;
         }
       }
       else {
-        return this.unstyled;
+        return that.unstyled;
       }
 
     }

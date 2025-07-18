@@ -33,11 +33,9 @@ let _applyFilters = (source2, vtLayer2) => {
     if (anyApplied) {
       if (!source2.inview)
         vtLayer2.setVisible(true);
-      (void 0).changed();
     } else {
       if (!source2.inview)
         vtLayer2.setVisible(false);
-      (void 0).changed();
     }
   };
 };
